@@ -1,3 +1,2 @@
 ./gym_example/*
 ./venv/*
-!/gym_example/gym_example/envs/kvazaar_env.py
