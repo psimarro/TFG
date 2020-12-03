@@ -38,6 +38,7 @@ def main():
 		sys.exit(0)
 	
 def run_episode(env, verbose):
+	env.reset()
 	env.render()
 	sum_reward = 0
 
@@ -47,7 +48,7 @@ def run_episode(env, verbose):
 		state, reward, done, info = env.step(action)
 		sum_reward += reward
 
-		if verbose and info != {'END'}:
+		if verbose and info["estado"] == 'END':
 			print("action:", action+1, "core(s)")
 
 		if verbose:
