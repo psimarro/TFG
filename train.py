@@ -29,14 +29,15 @@ def main ():
     # register the custom environment
     select_env = "kvazaar-v0"
     register_env(select_env, lambda config: Kvazaar_v0(kvazaar_path=kvazaar_path, 
-                   vid_path=vid_path, 
-                   nCores=multiprocessing.cpu_count(),
-                   intervalos=[25, 50, 100, 150]))
+                                                       vid_path=vid_path, 
+                                                       nCores=multiprocessing.cpu_count(),
+                                                       intervalos=[25, 50, 100, 150]))
 
 
     # configure the environment and create agent
     config = ppo.DEFAULT_CONFIG.copy()
     config["log_level"] = "WARN"
+    config["num_workers"] = 0
     agent = ppo.PPOTrainer(config, env=select_env)
 
     status = "{:2d} reward {:6.2f}/{:6.2f}/{:6.2f} len {:4.2f} saved {}"
@@ -66,7 +67,8 @@ def main ():
     vid_path = "/home/pedro/Descargas/E_KristenAndSara_1280x720_60p.yuv"
     # apply the trained policy in a rollout
     agent.restore(chkpt_file)
-    env = gym.make(select_env, kvazaar_path=kvazaar_path, 
+    env = gym.make(select_env, 
+                   kvazaar_path=kvazaar_path, 
                    vid_path=vid_path, 
                    nCores=multiprocessing.cpu_count(),
                    intervalos=[25, 50, 100, 150])

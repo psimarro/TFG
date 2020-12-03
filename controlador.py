@@ -48,7 +48,7 @@ def run_episode(env, verbose):
 		state, reward, done, info = env.step(action)
 		sum_reward += reward
 
-		if verbose and info["estado"] == 'END':
+		if verbose and info["estado"] != 'END':
 			print("action:", action+1, "core(s)")
 
 		if verbose:
