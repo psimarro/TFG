@@ -10,6 +10,10 @@ import ray.rllib.agents.ppo as ppo
 import shutil
 import multiprocessing
 
+##kvazaar options
+kvazaar_path = "/home/pedro/malleable_kvazaar/bin/./kvazaar"
+vid_path = "/home/pedro/Descargas/E_KristenAndSara_1280x720_60p.yuv"
+cpu_count = multiprocessing.cpu_count()
 
 def main ():
     # init directory in which to save checkpoints
@@ -24,29 +28,27 @@ def main ():
     # start Ray -- add `local_mode=True` here for debugging
     ray.init(ignore_reinit_error=True)
 
-    kvazaar_path = "/home/pedro/malleable_kvazaar/bin/./kvazaar"
-    vid_path = "/home/pedro/Descargas/E_KristenAndSara_1280x720_60p.yuv"
+    
     # register the custom environment
     select_env = "kvazaar-v0"
     register_env(select_env, lambda config: Kvazaar_v0(kvazaar_path=kvazaar_path, 
                                                        vid_path=vid_path, 
-                                                       nCores=multiprocessing.cpu_count(),
-                                                       intervalos=[25, 50, 100, 150]))
+                                                       nCores=cpu_count)
 
 
     # configure the environment and create agent
     config = ppo.DEFAULT_CONFIG.copy()
     config["log_level"] = "WARN"
     config["num_workers"] = 1
-    config["num_cpus_per_worker"] = multiprocessing.cpu_count()
+    config["num_cpus_per_worker"] = cpu_count
     config["train_batch_size"] = 26
-    config["rollout_fragment_length"] = 2
-    config["sgd_minibatch_size"] = 1
+    config["rollout_fragment_length"] =  13
+    config["sgd_minibatch_size"] = 3
 
     agent = ppo.PPOTrainer(config, env=select_env)
 
     status = "{:2d} reward {:6.2f}/{:6.2f}/{:6.2f} len {:4.2f} saved {}"
-    n_iter = 3
+    n_iter = 4
 
     # train a policy with RLlib using PPO
     for n in range(n_iter):
@@ -68,34 +70,34 @@ def main ():
     model = policy.model
     print(model.base_model.summary())
 
-    kvazaar_path = "/home/pedro/malleable_kvazaar/bin/./kvazaar"
-    vid_path = "/home/pedro/Descargas/E_KristenAndSara_1280x720_60p.yuv"
+    agent.cleanup() ##clean worker so kvazaar instances are shut down
     # apply the trained policy in a rollout
     agent.restore(chkpt_file)
     env = gym.make(select_env, 
                    kvazaar_path=kvazaar_path, 
                    vid_path=vid_path, 
-                   nCores=multiprocessing.cpu_count(),
-                   intervalos=[25, 50, 100, 150])
+                   nCores=cpu_count)
     
     state = env.reset()
     sum_reward = 0
-    n_step = 20
+    done = None
+    cpus_used = [0] * cpu_count
     
-    done = False
-    while not done: #for step in range(n_step):
+    while not done:
         action = agent.compute_action(state)
-        print(action+1)
+        print("action:", action+1, "core(s)")
+        cpus_used[action] += 1
         state, reward, done, info = env.step(action)
         sum_reward += reward
 
         env.render()
 
-        if done == 1:
+        if done:
             # report at the end of each episode
-            print("cumulative reward", sum_reward)
-            state = env.reset()
-            sum_reward = 0
+            print("cumulative reward", sum_reward, ",cpus used:", cpus_used)
+    
+    env.close() # close kvazaar
+   
 
 
 if __name__ == "__main__":

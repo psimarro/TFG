@@ -29,8 +29,7 @@ def main():
 		env = gym.make("kvazaar-v0", 
 						kvazaar_path=kvazaar_path, 
 						vid_path=vid_path, 
-						nCores=multiprocessing.cpu_count(),
-						intervalos=[25, 50, 100, 150])
+						nCores=multiprocessing.cpu_count())
 		run_episode(env, verbose=True)
 
 	except KeyboardInterrupt:
