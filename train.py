@@ -33,7 +33,7 @@ def main ():
     select_env = "kvazaar-v0"
     register_env(select_env, lambda config: Kvazaar_v0(kvazaar_path=kvazaar_path, 
                                                        vid_path=vid_path, 
-                                                       nCores=cpu_count)
+                                                       nCores=cpu_count))
 
 
     # configure the environment and create agent
@@ -94,7 +94,7 @@ def main ():
 
         if done:
             # report at the end of each episode
-            print("cumulative reward", sum_reward, ",cpus used:", cpus_used)
+            print("cumulative reward", sum_reward, "cpus used:", cpus_used)
     
     env.close() # close kvazaar
    
