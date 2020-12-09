@@ -42,7 +42,7 @@ def run_episode(env, verbose):
 	env.render()
 	sum_reward = 0
 
-	while env.done == False:
+	while True:
 		action = env.action_space.sample()
 		
 		state, reward, done, info = env.step(action)

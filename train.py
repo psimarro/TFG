@@ -37,11 +37,16 @@ def main ():
     # configure the environment and create agent
     config = ppo.DEFAULT_CONFIG.copy()
     config["log_level"] = "WARN"
-    config["num_workers"] = 0
+    config["num_workers"] = 1
+    config["num_cpus_per_worker"] = multiprocessing.cpu_count()
+    config["train_batch_size"] = 26
+    config["rollout_fragment_length"] = 2
+    config["sgd_minibatch_size"] = 1
+
     agent = ppo.PPOTrainer(config, env=select_env)
 
     status = "{:2d} reward {:6.2f}/{:6.2f}/{:6.2f} len {:4.2f} saved {}"
-    n_iter = 5
+    n_iter = 3
 
     # train a policy with RLlib using PPO
     for n in range(n_iter):
@@ -76,9 +81,11 @@ def main ():
     state = env.reset()
     sum_reward = 0
     n_step = 20
-
-    for step in range(n_step):
+    
+    done = False
+    while not done: #for step in range(n_step):
         action = agent.compute_action(state)
+        print(action+1)
         state, reward, done, info = env.step(action)
         sum_reward += reward
 
