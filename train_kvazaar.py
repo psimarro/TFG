@@ -41,14 +41,14 @@ def main ():
     config["log_level"] = "WARN"
     config["num_workers"] = 1
     config["num_cpus_per_worker"] = cpu_count
-    config["train_batch_size"] = 26
-    config["rollout_fragment_length"] =  13
-    config["sgd_minibatch_size"] = 3
+    config["train_batch_size"] = 50
+    config["rollout_fragment_length"] =  10
+    config["sgd_minibatch_size"] = 4
 
     agent = ppo.PPOTrainer(config, env=select_env)
 
     status = "{:2d} reward {:6.2f}/{:6.2f}/{:6.2f} len {:4.2f} saved {}"
-    n_iter = 3
+    n_iter = 50
 
     # train a policy with RLlib using PPO
     for n in range(n_iter):
@@ -70,7 +70,7 @@ def main ():
     model = policy.model
     print(model.base_model.summary())
 
-    agent.cleanup() ##clean worker so kvazaar instances are shut down
+    #agent.cleanup() ##clean worker so kvazaar instances are shut down
     # apply the trained policy in a rollout
     agent.restore(chkpt_file)
     env = gym.make(select_env, 

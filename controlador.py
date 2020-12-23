@@ -34,6 +34,7 @@ def main():
 
 	except KeyboardInterrupt:
 		print ("\nKeyboard Interrupt")
+		env.close()
 		sys.exit(0)
 	
 def run_episode(env, verbose):
@@ -43,7 +44,7 @@ def run_episode(env, verbose):
 
 	while True:
 		action = env.action_space.sample()
-		
+
 		state, reward, done, info = env.step(action)
 		sum_reward += reward
 
