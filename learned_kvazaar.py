@@ -9,8 +9,9 @@ import multiprocessing
 import glob
 
 ##kvazaar options
-kvazaar_path = "/home/pedro/malleable_kvazaar/bin/./kvazaar"
-vid_path = "/home/pedro/Descargas/E_KristenAndSara_1280x720_60p.yuv"
+user = getpass.getuser()
+kvazaar_path = "/home/" + user + "/malleable_kvazaar/bin/./kvazaar"
+vids_path = "/home/" + user + "/videos_kvazaar/"
 cpu_count = multiprocessing.cpu_count()
 
 def main ():
@@ -31,7 +32,7 @@ def main ():
     # register the custom environment
     select_env = "kvazaar-v0"
     register_env(select_env, lambda config: Kvazaar_v0(kvazaar_path=kvazaar_path, 
-                                                       vid_path=vid_path, 
+                                                       vids_path=vids_path, 
                                                        nCores=cpu_count))
 
     agent = ppo.PPOTrainer(config, env=select_env)
@@ -45,7 +46,7 @@ def main ():
     agent.restore(chkpt_file)
     env = gym.make(select_env, 
                 kvazaar_path=kvazaar_path, 
-                vid_path=vid_path, 
+                vids_path=vids_path, 
                 nCores=cpu_count)
     
     state = env.reset()
