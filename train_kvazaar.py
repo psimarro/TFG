@@ -50,7 +50,7 @@ def main ():
     agent = ppo.PPOTrainer(config, env=select_env)
 
     status = "{:2d} reward {:6.2f}/{:6.2f}/{:6.2f} len {:4.2f} saved {}"
-    n_iter = 50
+    n_iter = 5
 
     # train a policy with RLlib using PPO
     for n in range(n_iter):
