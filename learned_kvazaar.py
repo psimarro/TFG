@@ -7,6 +7,7 @@ import ray.rllib.agents.ppo as ppo
 import shutil
 import multiprocessing
 import glob
+import getpass
 
 ##kvazaar options
 user = getpass.getuser()
