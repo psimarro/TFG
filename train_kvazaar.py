@@ -14,7 +14,8 @@ import getpass
 ##kvazaar options
 user = getpass.getuser()
 kvazaar_path = "/home/" + user + "/malleable_kvazaar/bin/./kvazaar"
-vids_path = "/home/" + user + "/videos_kvazaar/"
+vids_path_train = "/home/" + user + "/videos_kvazaar/"
+vids_path_test = "/home/" + user + "videos_train_kvazaar"
 cpu_count = multiprocessing.cpu_count()
 
 def main ():
@@ -34,7 +35,7 @@ def main ():
     # register the custom environment
     select_env = "kvazaar-v0"
     register_env(select_env, lambda config: Kvazaar_v0(kvazaar_path=kvazaar_path, 
-                                                       vids_path=vids_path, 
+                                                       vids_path=vids_path_train, 
                                                        nCores=cpu_count))
 
 
@@ -77,7 +78,7 @@ def main ():
     agent.restore(chkpt_file)
     env = gym.make(select_env, 
                    kvazaar_path=kvazaar_path, 
-                   vid_path=vids_path, 
+                   vid_path=vids_path_train, 
                    nCores=cpu_count)
     
     state = env.reset()
