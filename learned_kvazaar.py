@@ -12,7 +12,7 @@ import getpass
 ##kvazaar options
 user = getpass.getuser()
 kvazaar_path = "/home/" + user + "/malleable_kvazaar/bin/./kvazaar"
-vids_path = "/home/" + user + "/videos_kvazaar/"
+vids_path = "/home/" + user + "/videos_kvazaar_test/"
 cpu_count = multiprocessing.cpu_count()
 
 def main ():

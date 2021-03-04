@@ -15,7 +15,7 @@ import getpass
 user = getpass.getuser()
 kvazaar_path = "/home/" + user + "/malleable_kvazaar/bin/./kvazaar"
 vids_path_train = "/home/" + user + "/videos_kvazaar/"
-vids_path_test = "/home/" + user + "videos_train_kvazaar"
+vids_path_test = "/home/" + user + "videos_train_test"
 cpu_count = multiprocessing.cpu_count()
 
 def main ():
@@ -78,7 +78,7 @@ def main ():
     agent.restore(chkpt_file)
     env = gym.make(select_env, 
                    kvazaar_path=kvazaar_path, 
-                   vid_path=vids_path_train, 
+                   vids_path=vids_path_train, 
                    nCores=cpu_count)
     
     state = env.reset()
