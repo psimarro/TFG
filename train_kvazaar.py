@@ -10,6 +10,7 @@ import ray.rllib.agents.ppo as ppo
 import shutil
 import multiprocessing
 import getpass
+import sys
 
 ##kvazaar options
 user = getpass.getuser()
@@ -51,7 +52,7 @@ def main ():
     agent = ppo.PPOTrainer(config, env=select_env)
 
     status = "{:2d} reward {:6.2f}/{:6.2f}/{:6.2f} len {:4.2f} saved {}"
-    n_iter = 5
+    n_iter = int(sys.argv[1])
 
     # train a policy with RLlib using PPO
     for n in range(n_iter):
