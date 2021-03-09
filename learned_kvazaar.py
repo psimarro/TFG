@@ -8,14 +8,18 @@ import shutil
 import multiprocessing
 import glob
 import getpass
+import subprocess
 
-##kvazaar options
-user = getpass.getuser()
-kvazaar_path = "/home/" + user + "/malleable_kvazaar/bin/./kvazaar"
-vids_path = "/home/" + user + "/videos_kvazaar_test/"
-cpu_count = multiprocessing.cpu_count()
+
+nCores = multiprocessing.cpu_count()
 
 def main ():
+    ##kvazaar options
+    user = getpass.getuser()
+    kvazaar_path = "/home/" + user + "/malleable_kvazaar/bin/./kvazaar"
+    vids_path_test = "/home/" + user + "/videos_train_test/"
+    kvazaar_cores = [x for x in range(int(nCores/2),int(nCores))]
+    print(kvazaar_cores)
 
     # start Ray -- add `local_mode=True` here for debugging
     ray.init(ignore_reinit_error=True)
@@ -24,17 +28,16 @@ def main ():
     config = ppo.DEFAULT_CONFIG.copy()
     config["log_level"] = "WARN"
     config["num_workers"] = 1
-    config["num_cpus_per_worker"] = cpu_count
-    config["train_batch_size"] = 50
-    config["rollout_fragment_length"] =  10
-    config["sgd_minibatch_size"] = 4
+    config["num_cpus_per_worker"] = nCores/2
+    config["train_batch_size"] = 200
+    config["rollout_fragment_length"] =  200
 
     
     # register the custom environment
     select_env = "kvazaar-v0"
     register_env(select_env, lambda config: Kvazaar_v0(kvazaar_path=kvazaar_path, 
-                                                       vids_path=vids_path, 
-                                                       nCores=cpu_count))
+                                                       vids_path=vids_path_test, 
+                                                       cores=kvazaar_cores))
 
     agent = ppo.PPOTrainer(config, env=select_env)
 
@@ -47,13 +50,13 @@ def main ():
     agent.restore(chkpt_file)
     env = gym.make(select_env, 
                 kvazaar_path=kvazaar_path, 
-                vids_path=vids_path, 
-                nCores=cpu_count)
+                vids_path=vids_path_test, 
+                cores=kvazaar_cores)
     
     state = env.reset()
     sum_reward = 0
     done = None
-    cpus_used = [0] * cpu_count
+    cpus_used = [0] * len(kvazaar_cores)
     steps = 0
 
     while not done:
@@ -77,4 +80,7 @@ def main ():
 
 
 if __name__ == "__main__":
+    pid = os.getpid()
+    p = subprocess.Popen(["taskset", "-p", str(pid), "-c", "0-" + str(int(nCores/2) - 1)])
+    p.wait()
     main()
