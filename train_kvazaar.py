@@ -14,13 +14,78 @@ import sys
 import subprocess
 import argparse
 import datetime
+import logging
+import logging.handlers
+import tempfile
+import ray.tune.logger as ray_logger
+
 
 
 nCores = multiprocessing.cpu_count()
 
-def main ():
 
+def calcula_cores(core_ini, core_fin):
+    """Returns a list integers that matches the CPUS for Kvazaar"""
+    print(core_ini, core_fin)
+    return [x for x in range(core_ini,core_fin+1)] 
+
+def set_affinity(kvazaar_cores):
+    """
+    Method that sets the affinity of the main process according to the cpus set for Kvazaar.
+    """
+    pid = os.getpid()
+    print("Current pid: ", pid)
+    total_cores = [x for x in range (nCores)]
+    cores_main_proc = [x for x in total_cores if x not in kvazaar_cores]
+    p = subprocess.Popen(["taskset", "-cp", ",".join(map(str,cores_main_proc)), str(pid)])
+    p.wait()
+
+
+def parse_args():
+    """
+    Method that manages command line arguments.
+    """
+    parser = argparse.ArgumentParser(description="Trainer for Kvazaar video encoder using RLLIB.",
+    argument_default=argparse.SUPPRESS, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("-i", "--iters", type=int, help="Number of training iterations", required=True)
+    parser.add_argument("-b", "--batch", type=int, help="Training batch size", default=200)
+    parser.add_argument("--mini_batch", type=int, help="Size of SGD minibatch", default=128)
+    parser.add_argument("-m", "--mode", help="Mode of video selection", choices=["random","rotating"], required=True)
+    parser.add_argument("-n", "--name", required=True, help="Name of the trainiing. This will be the name of the path for saving checkpoints.")
+    parser.add_argument("-k", "--kvazaar", help="Kvazaar's executable file location", default= os.path.expanduser("~/malleable_kvazaar/bin/./kvazaar"))
+    parser.add_argument("-v", "--videos", help= "Path of the set of videos for training", default= os.path.expanduser("~/videos_kvazaar_train/"))
+    parser.add_argument("-c", "--cores", nargs=2, metavar=('start', 'end'), type=int, help= "Kvazaar's dedicated CPUS (range)", default=[0, int(nCores/2)-1])
+    args = parser.parse_args()
+    return args
+
+def get_video_logger(video_log_file):
+    """
+    Method that returns a logger for the videos used.
+    """
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    file_handler = logging.handlers.RotatingFileHandler(filename=video_log_file,mode='w')
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(logging.Formatter("%(asctime)s - %(message)s"))
+    logger.addHandler(file_handler)
+    return logger
+
+def main():
+    
     args = parse_args()
+    fecha = datetime.datetime.now().strftime("%d_%m_%Y__%H_%M_%S")
+
+    #init path for results if not existing
+    if not os.path.exists("./resultados/"):
+        os.makedirs("./resultados")
+    
+    #init path for results of this training if not existing
+    results_path =  "resultados/" + args.name + "/"
+    if not os.path.exists(results_path):
+        os.makedirs(results_path)
+
+    #create logger for video usage
+    video_logger = get_video_logger(results_path + 'video_' + args.name + "_" + fecha + '.log')
 
     ##kvazaar options
     kvazaar_path = args.kvazaar
@@ -32,13 +97,8 @@ def main ():
     set_affinity(kvazaar_cores)
 
     # init directory in which to save checkpoints
-    chkpt_root = "tmp/exa/" + args.name + "/"
-    # shutil.rmtree(chkpt_root, ignore_errors=True, onerror=None)
-
-    # init directory in which to log results
-    # ray_results = "{}/ray_results/{}/".format(os.getenv("HOME"), args.name)
-    # shutil.rmtree(ray_results, ignore_errors=True, onerror=None)
-
+    chkpt_root = results_path + "/checkpoints/"
+    
 
     # start Ray -- add `local_mode=True` here for debugging
     ray.init(ignore_reinit_error=True,local_mode=True)
@@ -47,9 +107,11 @@ def main ():
     # register the custom environment
     select_env = "kvazaar-v0"
     register_env(select_env, lambda config: Kvazaar_v0(kvazaar_path=kvazaar_path, 
-                                                       vids_path=vids_path_train, 
-                                                       cores=kvazaar_cores,
-                                                       mode=kvazaar_mode))
+                                                        vids_path=vids_path_train, 
+                                                        cores=kvazaar_cores,
+                                                        mode=kvazaar_mode,
+                                                        logger=video_logger,
+                                                        num_steps=args.batch*args.iters))
 
 
     # configure the environment and create agent
@@ -57,11 +119,19 @@ def main ():
     config["log_level"] = "WARN"    
     config["num_workers"] = 0
     config["num_cpus_for_driver"] = nCores - len(kvazaar_cores)
-    config["train_batch_size"] = 200
-    config["rollout_fragment_length"] =  200
-         
+    config["train_batch_size"] = args.batch
+    config["rollout_fragment_length"] = args.batch
+    config["sgd_minibatch_size"] = args.mini_batch
 
-    agent = ppo.PPOTrainer(config, env=select_env)
+
+    #Create logger for ray_results
+    def get_ray_results_logger(config=config, name=args.name, results_path=results_path, fecha=fecha):
+        logdir = tempfile.mkdtemp(
+            prefix=name+"_"+fecha+"_", dir=results_path)
+        return ray_logger.UnifiedLogger(config, logdir, loggers=None)
+
+    ray_results_logger = get_ray_results_logger
+    agent = ppo.PPOTrainer(config, env=select_env, logger_creator=ray_results_logger)
 
     status = "\033[1;32;40m{:2d} reward {:6.2f}/{:6.2f}/{:6.2f} len {:4.2f} saved {}\033[0m"
     n_iter = args.iters
@@ -85,35 +155,8 @@ def main ():
         except StopIteration:
             print("Training stopped.") 
             exit()
-
+    
  
-
-def parse_args():
-    user = getpass.getuser()
-    parser = argparse.ArgumentParser(description="Trainer for Kvazaar video encoder using RLLIB.",
-    argument_default=argparse.SUPPRESS, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("-i", "--iters", type=int, help="Number of training iterations", required=True)
-    parser.add_argument("-b" "--batch", type=int, help="Size of training batch", default=200)
-    parser.add_argument("-m", "--mode", help="Mode of video selection", choices=["random","rotating"], required=True)
-    parser.add_argument("-k", "--kvazaar", help="Kvazaar's executable file location", default="/home/" + user + "/malleable_kvazaar/bin/./kvazaar")
-    parser.add_argument("-v", "--videos", help= "Path of the set of videos for training", default= "/home/" + user + "/videos_kvazaar_train/")
-    parser.add_argument("-c", "--cores", nargs=2, metavar=('start', 'end'), type=int, help= "Kvazaar's dedicated CPUS (range)", default=[int(nCores/2), nCores-1])
-    parser.add_argument("-n", "--name", help="Name of the trainiing. This will be the name of the path for saving checkpoints.", default=datetime.datetime.now().strftime("%d_%m_%Y__%H_%M_%S"))
-    args = parser.parse_args()
-    return args
-
-def calcula_cores(core_ini, core_fin):
-    print(core_ini, core_fin)
-    return [x for x in range(core_ini,core_fin+1)] 
-
-def set_affinity(kvazaar_cores):
-    pid = os.getpid()
-    print("Current pid: ", pid)
-    total_cores = [x for x in range (nCores)]
-    cores_main_proc = [x for x in total_cores if x not in kvazaar_cores]
-    p = subprocess.Popen(["taskset", "-cp", ",".join(map(str,cores_main_proc)), str(pid)])
-    p.wait()
-
 if __name__ == "__main__":
     main()
 
