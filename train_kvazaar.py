@@ -24,23 +24,6 @@ import ray.tune.logger as ray_logger
 nCores = multiprocessing.cpu_count()
 
 
-def calcula_cores(core_ini, core_fin):
-    """Returns a list integers that matches the CPUS for Kvazaar"""
-    print(core_ini, core_fin)
-    return [x for x in range(core_ini,core_fin+1)] 
-
-def set_affinity(kvazaar_cores):
-    """
-    Method that sets the affinity of the main process according to the cpus set for Kvazaar.
-    """
-    pid = os.getpid()
-    print("Current pid: ", pid)
-    total_cores = [x for x in range (nCores)]
-    cores_main_proc = [x for x in total_cores if x not in kvazaar_cores]
-    p = subprocess.Popen(["taskset", "-cp", ",".join(map(str,cores_main_proc)), str(pid)])
-    p.wait()
-
-
 def parse_args():
     """
     Method that manages command line arguments.
@@ -57,6 +40,22 @@ def parse_args():
     parser.add_argument("-c", "--cores", nargs=2, metavar=('start', 'end'), type=int, help= "Kvazaar's dedicated CPUS (range)", default=[0, int(nCores/2)-1])
     args = parser.parse_args()
     return args
+
+def calcula_cores(core_ini, core_fin):
+    """Returns a list integers that matches the CPUS for Kvazaar"""
+    print(core_ini, core_fin)
+    return [x for x in range(core_ini,core_fin+1)] 
+
+def set_affinity(kvazaar_cores):
+    """
+    Method that sets the affinity of the main process according to the cpus set for Kvazaar.
+    """
+    pid = os.getpid()
+    print("Current pid: ", pid)
+    total_cores = [x for x in range (nCores)]
+    cores_main_proc = [x for x in total_cores if x not in kvazaar_cores]
+    p = subprocess.Popen(["taskset", "-cp", ",".join(map(str,cores_main_proc)), str(pid)])
+    p.wait()
 
 def get_video_logger(video_log_file):
     """
