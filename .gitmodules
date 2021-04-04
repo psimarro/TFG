@@ -1,3 +1,0 @@
-[submodule "gym_example"]
-	path = gym_example
-	url = https://github.com/psimarro/gym_example.git
