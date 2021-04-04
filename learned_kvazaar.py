@@ -1,15 +1,17 @@
-from gym_example.envs.kvazaar_env import Kvazaar_v0
-from ray.tune.registry import register_env
-import gym
 import os
-import ray
-import ray.rllib.agents.ppo as ppo
 import multiprocessing
 import glob
 import getpass
 import subprocess
 import argparse
 
+import ray
+import ray.rllib.agents.ppo as ppo
+from ray.tune.registry import register_env
+import gym
+
+from gym_example.envs.kvazaar_env import Kvazaar
+from custom_callbacks import MyCallBacks
 
 nCores = multiprocessing.cpu_count()
 
@@ -68,6 +70,7 @@ def main ():
     config["train_batch_size"] = args.batch
     config["rollout_fragment_length"] =  args.batch
     config["sgd_minibatch_size"] = args.mini_batch
+    config["callbacks"] = MyCallBacks
 
     
     # register the custom environment
@@ -76,7 +79,9 @@ def main ():
                                                        vids_path=vids_path_test, 
                                                        cores=kvazaar_cores,
                                                        mode=None,
-                                                       logger=None))
+                                                       logger=None,
+                                                       batch=None,
+                                                       kvazaar_output=True))
 
     agent = ppo.PPOTrainer(config, env=select_env)
 
@@ -105,19 +110,23 @@ def main ():
     cpus_used = [0] * len(kvazaar_cores)
     steps = 0
 
+    done = False
     while not done:
+
         action = agent.compute_action(state)
-        print("action:", action+1, "core(s)")
+        
         
         state, reward, done, info = env.step(action)
         sum_reward += reward
         
-        env.render()
+        done = info["kvazaar"] == "END"
 
         if done:
             # report at the end of each episode
-            print('cumulative reward {:.3f} in {:} steps, cpus used {:}'.format(sum_reward, steps, cpus_used))
+            print('cumulative reward {} in {:} steps, cpus used {:}'.format(sum_reward, steps, cpus_used))
         else: 
+            print("action:", action+1, "core(s)")
+            env.render()
             cpus_used[action] += 1
             steps += 1
     

@@ -1,13 +1,4 @@
-#!/usr/bin/env python
-# encoding: utf-8
-
-from gym_example.envs.kvazaar_env import Kvazaar_v0
-from ray.tune.registry import register_env
-import gym
 import os
-import ray
-import ray.rllib.agents.ppo as ppo
-import shutil
 import multiprocessing
 import getpass
 import sys
@@ -17,12 +8,17 @@ import datetime
 import logging
 import logging.handlers
 import tempfile
+
+import gym
+import ray
+import ray.rllib.agents.ppo as ppo
+from ray.tune.registry import register_env
 import ray.tune.logger as ray_logger
 
-
+from kvazaar_gym.envs.kvazaar_env import Kvazaar
+from custom_callbacks import MyCallBacks
 
 nCores = multiprocessing.cpu_count()
-
 
 def parse_args():
     """
@@ -40,11 +36,6 @@ def parse_args():
     parser.add_argument("-c", "--cores", nargs=2, metavar=('start', 'end'), type=int, help= "Kvazaar's dedicated CPUS (range)", default=[0, int(nCores/2)-1])
     args = parser.parse_args()
     return args
-
-def calcula_cores(core_ini, core_fin):
-    """Returns a list integers that matches the CPUS for Kvazaar"""
-    print(core_ini, core_fin)
-    return [x for x in range(core_ini,core_fin+1)] 
 
 def set_affinity(kvazaar_cores):
     """
@@ -89,7 +80,7 @@ def main():
     ##kvazaar options
     kvazaar_path = args.kvazaar
     vids_path_train = args.videos
-    kvazaar_cores = calcula_cores(args.cores[0],args.cores[1])
+    kvazaar_cores = [x for x in range(args.cores[0], args.cores[1]+1)] 
     kvazaar_mode = args.mode
 
     ##Set affinity of main process using cores left by kvazaar
@@ -105,12 +96,15 @@ def main():
     
     # register the custom environment
     select_env = "kvazaar-v0"
-    register_env(select_env, lambda config: Kvazaar_v0(kvazaar_path=kvazaar_path, 
+    register_env(select_env, lambda config: Kvazaar(kvazaar_path=kvazaar_path, 
                                                         vids_path=vids_path_train, 
                                                         cores=kvazaar_cores,
                                                         mode=kvazaar_mode,
                                                         logger=video_logger,
-                                                        num_steps=args.batch*args.iters))
+                                                        num_steps=args.batch*args.iters,
+                                                        batch=args.batch,
+                                                        kvazaar_output=False
+                                                        ))
 
 
     # configure the environment and create agent
@@ -121,6 +115,7 @@ def main():
     config["train_batch_size"] = args.batch
     config["rollout_fragment_length"] = args.batch
     config["sgd_minibatch_size"] = args.mini_batch
+    config["callbacks"] = MyCallBacks
 
 
     #Create logger for ray_results
@@ -155,6 +150,11 @@ def main():
             print("Training stopped.") 
             exit()
     
+    # examine the trained policy
+    policy = agent.get_policy()
+    model = policy.model
+    print(model.base_model.summary())
+
  
 if __name__ == "__main__":
     main()
