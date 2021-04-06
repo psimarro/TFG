@@ -70,7 +70,7 @@ def main():
         os.makedirs("./resultados")
     
     #init path for results of this training if not existing
-    results_path =  "resultados/" + args.name + "/"
+    results_path =  "resultados/" + args.name
     if not os.path.exists(results_path):
         os.makedirs(results_path)
 

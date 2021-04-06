@@ -10,7 +10,7 @@ import ray.rllib.agents.ppo as ppo
 from ray.tune.registry import register_env
 import gym
 
-from gym_example.envs.kvazaar_env import Kvazaar
+from kvazaar_gym.envs.kvazaar_env import Kvazaar
 from custom_callbacks import MyCallBacks
 
 nCores = multiprocessing.cpu_count()
@@ -75,7 +75,7 @@ def main ():
     
     # register the custom environment
     select_env = "kvazaar-v0"
-    register_env(select_env, lambda config: Kvazaar_v0(kvazaar_path=kvazaar_path, 
+    register_env(select_env, lambda config: Kvazaar(kvazaar_path=kvazaar_path, 
                                                        vids_path=vids_path_test, 
                                                        cores=kvazaar_cores,
                                                        mode=None,

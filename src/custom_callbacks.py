@@ -57,7 +57,7 @@ class MyCallBacks(DefaultCallbacks):
         #     trainer, result["episodes_this_iter"]))
         # # you can mutate the result dict to add new fields to return
         # result["callback_ok"] = True
-        print("\nTotal time: {:.2f}\nTotal episodes: {}\n".format(trainer._time_total,
+        print("\nTotal time: {:.2f} s\nTotal episodes: {}\n".format(trainer._time_total,
                                                                   trainer._episodes_total))
             
 
