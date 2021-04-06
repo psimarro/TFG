@@ -1,6 +1,6 @@
 numpy
-tensorflow>=2.3
+tensorflow==2.0.4
 gym
-ray>=0.8.6
+ray==0.8.6
 ray[rllib]
 pandas

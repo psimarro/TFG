@@ -70,7 +70,7 @@ def main():
         os.makedirs("./resultados")
     
     #init path for results of this training if not existing
-    results_path =  "resultados/" + args.name
+    results_path =  "resultados/" + args.name + "/"
     if not os.path.exists(results_path):
         os.makedirs(results_path)
 
@@ -87,7 +87,7 @@ def main():
     set_affinity(kvazaar_cores)
 
     # init directory in which to save checkpoints
-    chkpt_root = results_path + "/checkpoints/"
+    chkpt_root = results_path + "checkpoints/"
     
 
     # start Ray -- add `local_mode=True` here for debugging

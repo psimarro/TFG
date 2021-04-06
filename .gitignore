@@ -4,4 +4,6 @@ tmp/
 resultados/
 *.egg-info/
 venv/
-__pycache__/
+**/__pycache__/
+
+
