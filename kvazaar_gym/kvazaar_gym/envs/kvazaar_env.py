@@ -16,7 +16,7 @@ class Kvazaar (gym.Env):
 
     def set_video_selection_mode(self):
         abs_path = self.vids_path
-        dirpath = os.path.dirname(abs_path)
+        dirpath = os.path.dirname(abs_path) + "/"
         if dirpath == abs_path: 
         #if os.path.isdir(self.vids_path):
             self.vids_list = os.listdir(self.vids_path) #list all vids in vids_path
@@ -30,7 +30,7 @@ class Kvazaar (gym.Env):
             self.vids_list = [os.path.basename(abs_path)]
             self.vid_selected['name'] = self.vids_list[0]
             self.vid_selected['dir_pos'] = 0
-            self.vids_path = dirpath + "/"
+            self.vids_path = dirpath
     
     def random_video_selection(self):   
         randomInt = self.np_random.randint(0, len(self.vids_list))
