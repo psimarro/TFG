@@ -24,7 +24,7 @@ def parse_args():
     parser.add_argument("-b", "--batch", type=int, help="Training batch size", default=200)
     parser.add_argument("--mini_batch", type=int, help="Size of SGD minibatch", default=128)
     parser.add_argument("-k", "--kvazaar", help="Kvazaar's executable file location.", default="/home/" + user + "/malleable_kvazaar/bin/./kvazaar")
-    parser.add_argument("-v", "--videos", help= "Path of the tested video. If it is a directory, a random one will be choosed.", default= "/home/" + user + "/videos_kvazaar_test/")
+    parser.add_argument("-v", "--video", help= "Path of the tested video.", required=True)
     parser.add_argument("-c", "--cores", nargs=2, metavar=('core_ini', 'core_fin'), type=int, help= "Kvazaar's dedicated CPUS (range)", default=[int(nCores/2), nCores-1])
     parser.add_argument("-p", "--path", required=True,type=str, help="Checkpoints path", default="resultados/")
     args = parser.parse_args()
@@ -52,7 +52,7 @@ def main ():
 
     ##kvazaar options
     kvazaar_path = args.kvazaar
-    vids_path_test = args.videos
+    vids_path_test = args.video
     kvazaar_cores = calcula_cores(args.cores[0],args.cores[1])
     
 

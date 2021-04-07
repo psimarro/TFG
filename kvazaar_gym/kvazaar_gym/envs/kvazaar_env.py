@@ -15,17 +15,22 @@ class Kvazaar (gym.Env):
     }
 
     def set_video_selection_mode(self):
-        if os.path.isdir(self.vids_path):
+        abs_path = self.vids_path
+        dirpath = os.path.dirname(abs_path)
+        if dirpath == abs_path: 
+        #if os.path.isdir(self.vids_path):
             self.vids_list = os.listdir(self.vids_path) #list all vids in vids_path
             if self.mode == "rotating":
                 self.vids_list = sorted(self.vids_list) #sort videos 
             elif self.mode is None: self.mode = "random"
-            
-        elif os.path.isfile(self.vids_path) and self.mode is None:
+
+        else:    
+        #elif os.path.isfile(os.path.dirname(self.vids_path) and self.mode is None:
             self.mode = "file" 
-            self.vids_list = os.listdir(self.vids_path)
+            self.vids_list = [os.path.basename(abs_path)]
             self.vid_selected['name'] = self.vids_list[0]
             self.vid_selected['dir_pos'] = 0
+            self.vids_path = dirpath + "/"
     
     def random_video_selection(self):   
         randomInt = self.np_random.randint(0, len(self.vids_list))
@@ -72,10 +77,10 @@ class Kvazaar (gym.Env):
         self.action_space = Discrete(len(self.cores))
         self.observation_space = Discrete(11)
         self.kvazaar = None ##object for kvazaar subprocess
-
-        self.set_video_selection_mode()
+        
         self.vid_selected = {'name': None, 'pos': 0}
-
+        self.set_video_selection_mode()
+        
         self.reset()
         self.reset_kvazaar()
     

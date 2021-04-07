@@ -4,6 +4,7 @@ tmp/
 resultados/
 *.egg-info/
 venv/
-**/__pycache__/
+__pycache__/
+kvazaar_gym/kvazaar_gym/__pycache__/
 
 
