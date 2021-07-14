@@ -23,9 +23,12 @@ class Kvazaar (gym.Env):
             
         elif os.path.isfile(self.vids_path) and self.mode is None:
             self.mode = "file" 
-            self.vids_list = os.listdir(self.vids_path)
-            self.vid_selected['name'] = self.vids_list[0]
+            self.vid_selected['name'] = os.path.basename(self.vids_path)
             self.vid_selected['dir_pos'] = 0
+            self.vids_path = os.path.dirname(self.vids_path)
+            self.vids_list = os.listdir(self.vids_path)
+            
+            
     
     def random_video_selection(self):   
         randomInt = self.np_random.randint(0, len(self.vids_list))
