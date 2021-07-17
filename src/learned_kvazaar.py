@@ -130,7 +130,7 @@ def main ():
             cpus_used[action] += 1
             steps += 1
     
-    env.close() 
+    agent.stop()
     
 if __name__ == "__main__":
     
