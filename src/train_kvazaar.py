@@ -16,6 +16,7 @@ from ray.tune.registry import register_env
 import ray.tune.logger as ray_logger
 
 from kvazaar_gym.envs.kvazaar_env import Kvazaar
+from tensorflow import _running_from_pip_package
 from custom_callbacks import MyCallBacks
 
 nCores = multiprocessing.cpu_count()
@@ -26,14 +27,19 @@ def parse_args():
     """
     parser = argparse.ArgumentParser(description="Trainer for Kvazaar video encoder using RLLIB.",
     argument_default=argparse.SUPPRESS, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    ##required
+    parser.add_argument("-n", "--name", required=True, help="Name of the trainiing. This will be the name of the path for saving checkpoints.")
     parser.add_argument("-i", "--iters", type=int, help="Number of training iterations", required=True)
+    parser.add_argument("-m", "--mode", help="Mode of video selection", choices=["random","rotating"], required=True)
+    parser.add_argument("-r", "--rewards", required=True, help="Path of rewards file")
+
+    #optional
     parser.add_argument("-b", "--batch", type=int, help="Training batch size", default=200)
     parser.add_argument("--mini_batch", type=int, help="Size of SGD minibatch", default=128)
-    parser.add_argument("-m", "--mode", help="Mode of video selection", choices=["random","rotating"], required=True)
-    parser.add_argument("-n", "--name", required=True, help="Name of the trainiing. This will be the name of the path for saving checkpoints.")
     parser.add_argument("-k", "--kvazaar", help="Kvazaar's executable file location", default= os.path.expanduser("~/malleable_kvazaar/bin/./kvazaar"))
     parser.add_argument("-v", "--videos", help= "Path of the set of videos for training", default= os.path.expanduser("~/videos_kvazaar_train/"))
     parser.add_argument("-c", "--cores", nargs=2, metavar=('start', 'end'), type=int, help= "Kvazaar's dedicated CPUS (range)", default=[0, int(nCores/2)-1])
+    
     args = parser.parse_args()
     return args
 
@@ -60,6 +66,17 @@ def get_video_logger(video_log_file):
     logger.addHandler(file_handler)
     return logger
 
+def create_map_rewards(rewards_path):
+    rewards = {}
+    rewards_file = open(rewards_path)
+    rewards_file = rewards_file.read().splitlines()
+    for line in rewards_file:
+        key, value = line.split(",")
+        rewards[int(key)]= int(value)
+
+    return rewards
+
+
 def main():
     
     args = parse_args()
@@ -76,6 +93,9 @@ def main():
 
     #create logger for video usage
     video_logger = get_video_logger(results_path + 'video_' + args.name + "_" + fecha + '.log')
+
+    #create map_rewards
+    rewards = create_map_rewards(args.rewards)
 
     ##kvazaar options
     kvazaar_path = args.kvazaar
@@ -96,6 +116,7 @@ def main():
     
     # register the custom environment
     select_env = "kvazaar-v0"
+    
     register_env(select_env, lambda config: Kvazaar(kvazaar_path=kvazaar_path, 
                                                         vids_path=vids_path_train, 
                                                         cores=kvazaar_cores,
@@ -103,7 +124,8 @@ def main():
                                                         logger=video_logger,
                                                         num_steps=args.batch*args.iters,
                                                         batch=args.batch,
-                                                        kvazaar_output=False
+                                                        kvazaar_output=False,
+                                                        rewards_map=rewards
                                                         ))
 
 
