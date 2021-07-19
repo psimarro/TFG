@@ -58,6 +58,7 @@ def create_map_rewards(rewards_path):
     for line in rewards_file:
         key, value = line.split(",")
         rewards[int(key)]= int(value)
+    return rewards
 
 def main ():
 
@@ -120,7 +121,8 @@ def main ():
                             vids_path=vids_path_test, 
                             cores=kvazaar_cores,
                             mode=None,
-                            logger=None)
+                            logger=None,
+                            rewards_map=rewards)
     
     state = env.reset()
     sum_reward = 0
