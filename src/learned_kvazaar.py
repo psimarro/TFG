@@ -21,12 +21,17 @@ def parse_args():
     """
     user = getpass.getuser()
     parser = argparse.ArgumentParser(description="Ray agent launcher that restores a checkpoint training of Kvazaar gym model.",formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    #Required
+    parser.add_argument("-v", "--video", help= "Path of the tested video.", required=True)
+    parser.add_argument("-p", "--path", required=True,type=str, help="Checkpoints path", default="resultados/")
+    parser.add_argument("-r", "--rewards", required=True, help="Path of rewards file")
+    
+    #optional
     parser.add_argument("-b", "--batch", type=int, help="Training batch size", default=200)
     parser.add_argument("--mini_batch", type=int, help="Size of SGD minibatch", default=128)
     parser.add_argument("-k", "--kvazaar", help="Kvazaar's executable file location.", default="/home/" + user + "/malleable_kvazaar/bin/./kvazaar")
-    parser.add_argument("-v", "--video", help= "Path of the tested video.", required=True)
     parser.add_argument("-c", "--cores", nargs=2, metavar=('core_ini', 'core_fin'), type=int, help= "Kvazaar's dedicated CPUS (range)", default=[int(nCores/2), nCores-1])
-    parser.add_argument("-p", "--path", required=True,type=str, help="Checkpoints path", default="resultados/")
+    
     args = parser.parse_args()
     return args, parser
 
@@ -45,6 +50,14 @@ def set_affinity(kvazaar_cores):
     cores_main_proc = [x for x in total_cores if x not in kvazaar_cores]
     p = subprocess.Popen(["taskset", "-cp", ",".join(map(str,cores_main_proc)), str(pid)])
     p.wait()
+
+def create_map_rewards(rewards_path):
+    rewards = {}
+    rewards_file = open(rewards_path)
+    rewards_file = rewards_file.read().splitlines()
+    for line in rewards_file:
+        key, value = line.split(",")
+        rewards[int(key)]= int(value)
 
 def main ():
 
@@ -73,6 +86,10 @@ def main ():
     config["callbacks"] = MyCallBacks
 
     
+    #create map_rewards
+    rewards = create_map_rewards(args.rewards)
+
+
     # register the custom environment
     select_env = "kvazaar-v0"
     register_env(select_env, lambda config: Kvazaar(kvazaar_path=kvazaar_path, 
@@ -81,7 +98,8 @@ def main ():
                                                        mode=None,
                                                        logger=None,
                                                        batch=None,
-                                                       kvazaar_output=True))
+                                                       kvazaar_output=True,
+                                                       rewards_map=rewards))
 
     agent = ppo.PPOTrainer(config, env=select_env)
 
