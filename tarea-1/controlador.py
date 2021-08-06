@@ -4,6 +4,11 @@ import random
 import time
 import sys
 
+## Primera tarea del proyecto: 
+## Esta tarea consitió en crear un programa Python que fuese capaz de ejecutar otro programa, en este caso escrito en C++. 
+## Así, el programa en Python funciona como controlador, y el programa en C++ actúa como controlado.
+
+
 def main():
 	#subprocess.run(["g++", "controlado.cpp", "-o", "controlado"]) # compilamos controlado.cpp
 	

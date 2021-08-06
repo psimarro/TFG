@@ -5,6 +5,18 @@ import random
 import time
 import sys
 
+## TAREA 2:
+## Controlador modificado respecto de la tarea 1.
+## Esta vez se llama al programa Kvazaar, utilizando los parámetros necesarios para su ejecución.
+## Además, el programa controlador permite comunicarse con el subproceso de Kvazaar generado: 
+## 		1. Este programa recoge un número entero por entrada estándar, que representa el número de cores que Kvazaar va a utilizar
+## 		2. Se comunica este dato a Kvazaar.
+# 		3. Kvazaar realiza la operación de procesado de un bloque con la entrada anterior y 
+# 		   el controlador recoge la salida mostrándola por pantalla.
+## 		4. Se repite el proceso desde el punto 1 hasta que el vídeo se codifica por completo
+
+## Esta implementación es la base del funcionamiento del entorno de GYM.
+
 nCores = multiprocessing.cpu_count()
 kvazaar_path = "/home/pedro/malleable_kvazaar/bin/./kvazaar"
 vid_path = "/home/pedro/Descargas/E_KristenAndSara_1280x720_60p.yuv"

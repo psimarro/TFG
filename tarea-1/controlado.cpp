@@ -5,6 +5,11 @@
 using namespace std;
 void dummy(double);
 
+/**
+	Programa en C++ que sirve de prueba para el controlador en Python.
+	Recoge un entero por pantalla y realiza la suma de todos los números enteros positivos hasta ese número
+*/
+
 int main(){
     double n;
     
