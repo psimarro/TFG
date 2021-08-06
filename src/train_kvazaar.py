@@ -8,6 +8,8 @@ import datetime
 import logging
 import logging.handlers
 import tempfile
+from time import CLOCK_REALTIME
+from configparser import ConfigParser
 
 import gym
 import ray
@@ -19,29 +21,31 @@ from kvazaar_gym.envs.kvazaar_env import Kvazaar
 from tensorflow import _running_from_pip_package
 from custom_callbacks import MyCallBacks
 
+
 nCores = multiprocessing.cpu_count()
 
-def parse_args():
-    """
-    Method that manages command line arguments.
-    """
-    parser = argparse.ArgumentParser(description="Trainer for Kvazaar video encoder using RLLIB.",
-    argument_default=argparse.SUPPRESS, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    ##required
-    parser.add_argument("-n", "--name", required=True, help="Name of the trainiing. This will be the name of the path for saving checkpoints.")
-    parser.add_argument("-i", "--iters", type=int, help="Number of training iterations", required=True)
-    parser.add_argument("-m", "--mode", help="Mode of video selection", choices=["random","rotating"], required=True)
-    parser.add_argument("-r", "--rewards", required=True, help="Path of rewards file")
+# def parse_args():
+#     """
+#     Method that manages command line arguments.
+#     """
+#     parser = argparse.ArgumentParser(description="Trainer for Kvazaar video encoder using RLLIB.",
+#     argument_default=argparse.SUPPRESS, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    #optional
-    parser.add_argument("-b", "--batch", type=int, help="Training batch size", default=200)
-    parser.add_argument("--mini_batch", type=int, help="Size of SGD minibatch", default=128)
-    parser.add_argument("-k", "--kvazaar", help="Kvazaar's executable file location", default= os.path.expanduser("~/malleable_kvazaar/bin/./kvazaar"))
-    parser.add_argument("-v", "--videos", help= "Path of the set of videos for training", default= os.path.expanduser("~/videos_kvazaar_train/"))
-    parser.add_argument("-c", "--cores", nargs=2, metavar=('start', 'end'), type=int, help= "Kvazaar's dedicated CPUS (range)", default=[0, int(nCores/2)-1])
+#     ##required
+#     # parser.add_argument("-n", "--name", required=True, help="Name of the trainiing. This will be the name of the path for saving checkpoints.")
+#     # parser.add_argument("-i", "--iters", type=int, help="Number of training iterations", required=True)
+#     # parser.add_argument("-m", "--mode", help="Mode of video selection", choices=["random","rotating"], required=True)
+#     # parser.add_argument("-r", "--rewards", required=True, help="Path of rewards file")
+
+#     # #optional
+#     # parser.add_argument("-b", "--batch", type=int, help="Training batch size", default=200)
+#     # parser.add_argument("--mini_batch", type=int, help="Size of SGD minibatch", default=128)
+#     # parser.add_argument("-k", "--kvazaar", help="Kvazaar's executable file location", default= os.path.expanduser("~/malleable_kvazaar/bin/./kvazaar"))
+#     # parser.add_argument("-v", "--videos", help= "Path of the set of videos for training", default= os.path.expanduser("~/videos_kvazaar_train/"))
+#     # parser.add_argument("-c", "--cores", nargs=2, metavar=('start', 'end'), type=int, help= "Kvazaar's dedicated CPUS (range)", default=[0, int(nCores/2)-1])
     
-    args = parser.parse_args()
-    return args
+#     args = parser.parse_args()
+#     return args
 
 def set_affinity(kvazaar_cores):
     """
@@ -76,32 +80,73 @@ def create_map_rewards(rewards_path):
 
     return rewards
 
+def checkconf(conf):
+    """Checker for configuration file options."""
 
+    rewards = conf['common']['rewards']
+    kvazaar = conf['common']['kvazaar']
+    cores = conf['common']['cores'].split(",")
+    cores[0] = int(cores[0])
+    cores[1] = int(cores[1])
+    batch = int(conf['train']['batch'])
+    mini_batch = int(conf['train']['mini_batch'])
+    videos = conf['train']['videos']
+    mode = conf['train']['mode']
+    iters = int(conf['train']['iters'])
+    name = conf['train']['name']
+
+    assert os.path.exists(rewards) , "La ruta de recompensas no existe"
+    assert os.path.isfile(rewards) , "La ruta de recompensas no es un archivo"
+    assert os.path.exists(kvazaar) , "La ruta de kvazaar no existe"
+    assert cores[0] >= 0 and \
+           cores[0] < nCores and \
+           cores[1] >= 0 and \
+           cores[1] < nCores and  \
+           cores[0] < cores[1] , "La configuración de cores de kvazaar no es correcta"
+    assert batch > 0 , "El tamaño de batch no es correcto"
+    assert mini_batch > 0 , "El tamaño de batch no es correcto"
+    assert mini_batch < batch , "El tamaño de mini_batch no es menor que el tamaño de batch"
+    assert os.path.exists(videos), "La ruta de videos de entrenamiento no existe"
+    assert mode == "random" or mode == "rotating", "El modo de entrenamiento no es random o rotating"
+    assert iters > 0, "El número de iteraciones debe ser positivo"
+    assert name != "" , "El entrenamiento debe tener un nombre"
+
+    
 def main():
     
-    args = parse_args()
+    parser = argparse.ArgumentParser(description="Trainer for Kvazaar video encoder using RLLIB.",
+    argument_default=argparse.SUPPRESS, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.parse_args()
+
+    # get configuration
+    conf = ConfigParser()
+    print(os.getcwd())
+    conf.read('src/config.ini')
+        
     fecha = datetime.datetime.now().strftime("%d_%m_%Y__%H_%M_%S")
 
     #init path for results if not existing
     if not os.path.exists("./resultados/"):
         os.makedirs("./resultados")
     
+    training_name = conf['train']['name']
     #init path for results of this training if not existing
-    results_path =  "resultados/" + args.name + "/"
+    results_path =  "resultados/" +  training_name + "/"
     if not os.path.exists(results_path):
         os.makedirs(results_path)
 
     #create logger for video usage
-    video_logger = get_video_logger(results_path + 'video_' + args.name + "_" + fecha + '.log')
+    video_logger = get_video_logger(results_path + 'video_' + training_name + "_" + fecha + '.log')
 
     #create map_rewards
-    rewards = create_map_rewards(args.rewards)
+    rewards = create_map_rewards(conf['common']['rewards'])
 
     ##kvazaar options
-    kvazaar_path = args.kvazaar
-    vids_path_train = args.videos
-    kvazaar_cores = [x for x in range(args.cores[0], args.cores[1]+1)] 
-    kvazaar_mode = args.mode
+    kvazaar_path = conf['common']['kvazaar']
+    vids_path_train = conf['train']['videos']
+    conf_cores = conf['common']['cores'].split(",")
+    kvazaar_cores = [x for x in range(int(conf_cores[0]), int(conf_cores[1])+1)] 
+    kvazaar_mode = conf['train']['mode']
 
     ##Set affinity of main process using cores left by kvazaar
     set_affinity(kvazaar_cores)
@@ -117,13 +162,17 @@ def main():
     # register the custom environment
     select_env = "kvazaar-v0"
     
+    n_iters = int(conf['train']['iters'])
+    batch = int(conf['train']['batch'])
+    mini_batch = int(conf['train']['mini_batch'])
+
     register_env(select_env, lambda config: Kvazaar(kvazaar_path=kvazaar_path, 
                                                         vids_path=vids_path_train, 
                                                         cores=kvazaar_cores,
                                                         mode=kvazaar_mode,
                                                         logger=video_logger,
-                                                        num_steps=args.batch*args.iters,
-                                                        batch=args.batch,
+                                                        num_steps=batch*n_iters,
+                                                        batch=batch,
                                                         kvazaar_output=False,
                                                         rewards_map=rewards
                                                         ))
@@ -134,14 +183,14 @@ def main():
     config["log_level"] = "WARN"    
     config["num_workers"] = 0
     config["num_cpus_for_driver"] = nCores - len(kvazaar_cores)
-    config["train_batch_size"] = args.batch
-    config["rollout_fragment_length"] = args.batch
-    config["sgd_minibatch_size"] = args.mini_batch
+    config["train_batch_size"] = batch
+    config["rollout_fragment_length"] = batch
+    config["sgd_minibatch_size"] = mini_batch
     config["callbacks"] = MyCallBacks
 
 
     #Create logger for ray_results
-    def get_ray_results_logger(config=config, name=args.name, results_path=results_path, fecha=fecha):
+    def get_ray_results_logger(config=config, name=training_name, results_path=results_path, fecha=fecha):
         logdir = tempfile.mkdtemp(
             prefix=name+"_"+fecha+"_", dir=results_path)
         return ray_logger.UnifiedLogger(config, logdir, loggers=None)
@@ -150,10 +199,10 @@ def main():
     agent = ppo.PPOTrainer(config, env=select_env, logger_creator=ray_results_logger)
 
     status = "\033[1;32;40m{:2d} reward {:6.2f}/{:6.2f}/{:6.2f} len {:4.2f} saved {}\033[0m"
-    n_iter = args.iters
+    
 
     # train a policy with RLlib using PPO
-    for n in range(n_iter):
+    for n in range(n_iters):
         try:
             result = agent.train()
             chkpt_file = agent.save(chkpt_root)

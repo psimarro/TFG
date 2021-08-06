@@ -86,8 +86,6 @@ class Kvazaar (gym.Env):
         self.reset()
         self.reset_kvazaar()
 
-        
-    
         #metrics
         self.video_usage = {video: 0 for video in self.vids_list}
         self.total_steps = 0
@@ -195,27 +193,6 @@ class Kvazaar (gym.Env):
         return [self.state, self.calculate_reward(), self.done, self.info]
     
     def calculate_reward(self):
-        # map_rewards = {
-        #     # 1: 0, ##[0,10)
-        #     # 2: 1, ##[10,16)
-        #     # 3: 2, ##[16,24)
-        #     # 4: 3, ##[20,24)
-        #     # 5: 6, ##[24,27)
-        #     # 6: 8, ##[27,30)
-        #     # 7: 10,  ##[30,35)
-        #     # 8: 7, # [35,40)
-        #     # 9: 4 # [40,inf)
-
-        #     1: -1000,
-        #     2: -100, 
-        #     3: -50,
-        #     4: 1,
-        #     5: 5,
-        #     6: 10,
-        #     7: -10,
-        #     8: -20,
-        #     9: -30
-        # }
         self.reward = self.rewards_map.get(self.state)
         self.info["reward"] = self.reward
 
