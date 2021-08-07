@@ -1,5 +1,5 @@
 numpy
-tensorflow==2.0.4
+tensorflow==2.4.1
 gym
 ray==0.8.6
 ray[rllib]
