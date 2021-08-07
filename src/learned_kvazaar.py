@@ -93,7 +93,7 @@ def main ():
     ##kvazaar options
     kvazaar_path = conf['common']['kvazaar']
     vids_path_test = args.video
-    conf_cores = list(conf['common']['cores'])
+    conf_cores = list(conf['common']['cores'].split(","))
     kvazaar_cores = calcula_cores(int(conf_cores[0]),int(conf_cores[1]))
     
     ##Set affinity of main process using cores left by kvazaar
