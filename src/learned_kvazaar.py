@@ -14,7 +14,6 @@ import gym
 from kvazaar_gym.envs.kvazaar_env import Kvazaar
 from custom_callbacks import MyCallBacks
 
-
 nCores = multiprocessing.cpu_count()
 
 def parse_args():
@@ -125,6 +124,7 @@ def main ():
                                                        kvazaar_output=True,
                                                        rewards_map=rewards))
 
+
     agent = ppo.PPOTrainer(config, env=select_env)
 
     #restore checkpoint
@@ -160,7 +160,7 @@ def main ():
         state, reward, done, info = env.step(action)
         sum_reward += reward
         
-        done = info["kvazaar"] == "END"
+        #done = info["kvazaar"] == "END"
 
         if done:
             # report at the end of each episode

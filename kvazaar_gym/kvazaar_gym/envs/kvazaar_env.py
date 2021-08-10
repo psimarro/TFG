@@ -50,9 +50,11 @@ class Kvazaar (gym.Env):
                    "\n ------------- \n" +
                     "VIDEO USAGE \n").format(self.total_steps)
 
+        ## Calculate the usage's percentage of each video used, using the number of times each video was chosen.
         self.video_usage = {key:round((value/self.total_steps*100), 0) 
                             for key, value in self.video_usage.items()}    
         
+        ## Write the usage in the message
         for video, usage in self.video_usage.items():
             message += video + " = " + str(usage) + "%\n"
 
@@ -143,47 +145,49 @@ class Kvazaar (gym.Env):
             time.sleep(1)
 
 
-
+    def call_kvazaar(self, action):
+        """ Interaction with Kvazaar process passing the new action, i.e. the new numbers of cpus used for the next video block."""
+        s = "nThs:" + str(action)
+        self.kvazaar.stdin.write(s + "\n")
+        output= self.kvazaar.stdout.readline().strip()
+        return output
+    
     def step(self, action):
-        assert self.action_space.contains(action)
-        action += 1 
-        
-        #Interaction with Kvazaar process passing the new action, i.e. the new numbers of cpus used for the next video block.
-        def do_action(action=action):
-            s = "nThs:" + str(action)
-            self.kvazaar.stdin.write(s + "\n")
-            output= self.kvazaar.stdout.readline().strip()
-            return output
-        ########
-        
-        output = do_action(action)
+        if self.done:
+            pass
+        else:
+            assert self.action_space.contains(action)
+            action += 1 
+            
+            output = self.call_kvazaar(action)
 
-        self.info["kvazaar"] = "running"
-        #Check if kvazaar is done
-        if(output == "END"):
-            self.reset_kvazaar()
-            output = do_action(action)
-            self.info["kvazaar"] = "END"
+            self.info["kvazaar"] = "running"
+            #Check if kvazaar is done
+            if(output == "END"):
+                self.reset_kvazaar()
+                #output = self.call_kvazaar(action)
+                self.info["kvazaar"] = "END"
+                self.done = True
 
-        ##update metrics
-        self.total_steps += 1
-        self.episode_steps += 1
-        self.video_usage[self.vid_selected['name']] += 1
-        
-        self.calculate_state(output=output)
+            ##update metrics
+            self.total_steps += 1
+            self.episode_steps += 1
+            self.video_usage[self.vid_selected['name']] += 1
+            
+            self.calculate_state(output=output)
 
-        #log this num step and the video used
-        if self.logger: 
-            self.logger.info("Step {} : fps {}, action {}".format(str(self.total_steps),
-                                                            str(self.info.get("fps")),
-                                                            str(action)))
-        
-        if self.total_steps == self.max_steps: 
-            #reached end of traininng
-            self.log_metrics()
+            #log this num step and the video used
+            if self.logger: 
+                self.logger.info("Step {} : fps {}, action {}".format(str(self.total_steps),
+                                                                str(self.info.get("fps")),
+                                                                str(action)))
+            
+            if self.total_steps == self.max_steps: 
+                #reached end of traininng
+                self.log_metrics()
 
-        if self.episode_steps == 10 :
-            self.done = True
+            # if self.episode_steps == 10 :
+            #      self.done = True
         
         try:
             assert self.observation_space.contains(self.state) #check if new state is valid
@@ -200,18 +204,20 @@ class Kvazaar (gym.Env):
 
     def calculate_state(self, output):
         ##Erase "FPS:" from output and save it in the new state.
-        output_value = np.float32(output[4:])
-        
-        self.info["fps"] = '{:.2f}'.format(output_value)
-        if output_value < 10: self.state = np.int64(1)
-        elif output_value < 16: self.state = np.int(2)
-        elif output_value < 20: self.state = np.int(3)
-        elif output_value < 24: self.state = np.int(4)
-        elif output_value < 27: self.state = np.int64(5)
-        elif output_value < 30: self.state = np.int64(6)
-        elif output_value < 35: self.state = np.int64(7)
-        elif output_value < 40: self.state = np.int64(8) 
-        else: self.state = np.int64(9)
+        if (output == "END"):
+            self.state = self.state
+        else: 
+            output_value = np.float32(output[4:])
+            self.info["fps"] = '{:.2f}'.format(output_value)
+            if output_value < 10: self.state = np.int64(1)
+            elif output_value < 16: self.state = np.int(2)
+            elif output_value < 20: self.state = np.int(3)
+            elif output_value < 24: self.state = np.int(4)
+            elif output_value < 27: self.state = np.int64(5)
+            elif output_value < 30: self.state = np.int64(6)
+            elif output_value < 35: self.state = np.int64(7)
+            elif output_value < 40: self.state = np.int64(8) 
+            else: self.state = np.int64(9)
     
     
     def render(self, mode="human"):
