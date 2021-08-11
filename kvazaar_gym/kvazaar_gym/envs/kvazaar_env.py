@@ -165,9 +165,9 @@ class Kvazaar (gym.Env):
             #Check if kvazaar is done
             if(output == "END"):
                 self.reset_kvazaar()
-                #output = self.call_kvazaar(action)
+                output = self.call_kvazaar(action)
                 self.info["kvazaar"] = "END"
-                self.done = True
+                #self.done = True
 
             ##update metrics
             self.total_steps += 1
@@ -186,8 +186,8 @@ class Kvazaar (gym.Env):
                 #reached end of traininng
                 self.log_metrics()
 
-            # if self.episode_steps == 10 :
-            #      self.done = True
+            if self.episode_steps == 100 :
+                  self.done = True
         
         try:
             assert self.observation_space.contains(self.state) #check if new state is valid
