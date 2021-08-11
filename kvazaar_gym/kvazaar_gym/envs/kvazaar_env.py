@@ -145,8 +145,8 @@ class Kvazaar (gym.Env):
         print("{} selected".format(self.vid_selected["name"]))
         
         #make sure kvazaar process is up
-        # while not self.kvazaar:
-        #     time.sleep(1)
+        while not self.kvazaar:
+             time.sleep(0.5)
 
 
     def call_kvazaar(self, action):
