@@ -27,7 +27,7 @@ def parse_args():
     #Required
     parser.add_argument("-v", "--video", help= "Path of the tested video.", required=True)
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("-a", "--action", type=int, help="Predifined action.", default=4)
+    group.add_argument("-a", "--action", type=int, help="Predifined action.")
     group.add_argument("-r", "--random", action='store_true', help= "Wheter to make an random baseline")
 
     #optional
@@ -141,10 +141,15 @@ def main ():
     cpus_used = [0] * len(kvazaar_cores)
     steps = 0
 
+
     done = False
     while not done:
-
-        action = args.action if args.action else env.action_space.sample()
+        
+        if 'action' in vars(args):
+            action = args.action
+        else:
+            action = env.action_space.sample()
+        #action = args.action if args.action else env.action_space.sample()
         
         state, reward, done, info = env.step(action)
         sum_reward += reward
