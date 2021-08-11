@@ -85,9 +85,10 @@ class Kvazaar (gym.Env):
         self.vid_selected = {'name': None, 'pos': 0}
         self.set_video_selection_mode()
         
-        self.reset()
+        self.seed()
         self.reset_kvazaar()
-
+        self.reset()
+    
         #metrics
         self.video_usage = {video: 0 for video in self.vids_list}
         self.total_steps = 0
@@ -98,11 +99,13 @@ class Kvazaar (gym.Env):
 
     def reset(self):
         self.seed() #Generate seed for random numbers
-        #self.reset_kvazaar()
-        self.state = self.calculate_state(self.call_kvazaar(self.action_space.sample()))
-        self.reward = self.calculate_reward()
-        self.done = False
         self.info = {"fps": 0, "reward": 0, "kvazaar": "running"}
+        #Generate random action sample for state resetting
+        output = self.call_kvazaar(self.action_space.sample())
+        self.calculate_state(output)
+        self.calculate_reward()
+        self.done = False
+        self.info["reward"] = self.reward
         self.episode_steps = 0
         return self.state
 
@@ -139,10 +142,11 @@ class Kvazaar (gym.Env):
                                         universal_newlines=True, bufsize=1, 
                                         env={'NUM_FRAMES_PER_BATCH': '24'})
                                         
-
+        print("{} selected".format(self.vid_selected["name"]))
+        
         #make sure kvazaar process is up
-        while not self.kvazaar:
-            time.sleep(1)
+        # while not self.kvazaar:
+        #     time.sleep(1)
 
 
     def call_kvazaar(self, action):

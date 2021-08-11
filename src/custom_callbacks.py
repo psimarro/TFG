@@ -26,7 +26,7 @@ class MyCallBacks(DefaultCallbacks):
         print("episode {} started".format(episode.episode_id))
         kvazaar_env = base_env.get_unwrapped()[0]
         video = getattr(kvazaar_env, "vid_selected")["name"]
-        print("New video selected: " + video)
+        print("Video selected: " + video)
         episode.user_data["fps"] = []
 
     def on_episode_step(self, worker: RolloutWorker, base_env: BaseEnv,
