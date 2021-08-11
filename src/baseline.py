@@ -28,7 +28,7 @@ def parse_args():
     parser.add_argument("-v", "--video", help= "Path of the tested video.", required=True)
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("-a", "--action", type=int, help="Predifined action.", default=4)
-    group.add_argument("-r", "--random", help= "Wheter to make an random baseline")
+    group.add_argument("-r", "--random", action='set_true', help= "Wheter to make an random baseline")
 
     #optional
     # parser.add_argument("-b", "--batch", type=int, help="Training batch size", default=200)
