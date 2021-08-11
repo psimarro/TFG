@@ -99,8 +99,8 @@ class Kvazaar (gym.Env):
     def reset(self):
         self.seed() #Generate seed for random numbers
         #self.reset_kvazaar()
-        self.state = np.int64(1)
-        self.reward = 0 #Starter reward is 0
+        self.state = self.calculate_state(self.call_kvazaar(self.action_space.sample()))
+        self.reward = self.calculate_reward()
         self.done = False
         self.info = {"fps": 0, "reward": 0, "kvazaar": "running"}
         self.episode_steps = 0
