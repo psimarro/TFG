@@ -146,7 +146,7 @@ class Kvazaar (gym.Env):
         
         #make sure kvazaar process is up
         while not self.kvazaar:
-             time.sleep(0.5)
+             time.sleep(1)
 
 
     def call_kvazaar(self, action):
