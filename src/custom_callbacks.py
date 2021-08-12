@@ -33,7 +33,7 @@ class MyCallBacks(DefaultCallbacks):
                         episode: MultiAgentEpisode, **kwargs):
         kvazaar_env = base_env.get_unwrapped()[0]
         fps = float(getattr(kvazaar_env, "info")["fps"])
-        reward = int(getattr(kvazaar_env, "info")["reward"])
+        reward = getattr(kvazaar_env, "info")["reward"]
         steps = int(getattr(kvazaar_env, "total_steps"))
         batch = int(getattr(kvazaar_env, "batch"))
 
