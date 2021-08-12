@@ -2,6 +2,7 @@ import subprocess
 import time
 import os
 import multiprocessing
+import bisect
 
 import gym
 from gym.utils import seeding
@@ -79,36 +80,34 @@ class Kvazaar (gym.Env):
         self.vids_list = None #for random or rotating mode
         
         self.action_space = Discrete(len(self.cores))
-        self.observation_space = Discrete(11)
+        self.observation_space = Discrete(9)
         self.kvazaar = None ##object for kvazaar subprocess
         
         self.vid_selected = {'name': None, 'pos': 0}
         self.set_video_selection_mode()
         
-        self.seed()
-        self.kvazaar = None
-        self.reset()
-    
         #metrics
         self.video_usage = {video: 0 for video in self.vids_list}
         self.total_steps = 0
-        
-        
 
-    
+        self.seed() #Generate seed for random numbers
+        self.state = None
+        self.reset()
+        
 
     def reset(self):
-        self.seed() #Generate seed for random numbers
+       
         self.info = {"fps": 0, "reward": 0, "kvazaar": "running"}
+
         #Generate random action sample for state resetting
         if self.kvazaar is None:
             self.reset_kvazaar()
-        else:
-            self.kvazaar.kill()
-            self.reset_kvazaar()
         
-        self.state = self.observation_space.sample()
-        self.calculate_reward()
+        if self.state is None: 
+            self.state = self.observation_space.sample()
+            self.calculate_reward()
+  
+
         self.done = False
         self.info["reward"] = self.reward
         self.episode_steps = 0
@@ -195,7 +194,7 @@ class Kvazaar (gym.Env):
                 #reached end of traininng
                 self.log_metrics()
 
-            if self.episode_steps == 100 :
+            if self.episode_steps == 50 :
                   self.done = True
         
         try:
@@ -218,15 +217,19 @@ class Kvazaar (gym.Env):
         else: 
             output_value = np.float32(output[4:])
             self.info["fps"] = '{:.2f}'.format(output_value)
-            if output_value < 10: self.state = np.int64(1)
-            elif output_value < 16: self.state = np.int(2)
-            elif output_value < 20: self.state = np.int(3)
-            elif output_value < 24: self.state = np.int(4)
-            elif output_value < 27: self.state = np.int64(5)
-            elif output_value < 30: self.state = np.int64(6)
-            elif output_value < 35: self.state = np.int64(7)
-            elif output_value < 40: self.state = np.int64(8) 
-            else: self.state = np.int64(9)
+            intervals = [10,16,20,24,27,30,35,40]
+            states = [np.int(x) for x in range(9)]
+            self.state = states[bisect.bisect(intervals, output_value)]
+
+            # if output_value < 10: self.state = np.int64(0)
+            # elif output_value < 16: self.state = np.int(1)
+            # elif output_value < 20: self.state = np.int(2)
+            # elif output_value < 24: self.state = np.int(3)
+            # elif output_value < 27: self.state = np.int64(4)
+            # elif output_value < 30: self.state = np.int64(5)
+            # elif output_value < 35: self.state = np.int64(6)
+            # elif output_value < 40: self.state = np.int64(7) 
+            # else: self.state = np.int64(8)
     
     
     def render(self, mode="human"):

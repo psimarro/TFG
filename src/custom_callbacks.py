@@ -38,8 +38,8 @@ class MyCallBacks(DefaultCallbacks):
         batch = int(getattr(kvazaar_env, "batch"))
 
         last_action = episode.last_action_for()
-
-        print("\tfps: {:.2f}, action: {}, reward: {}".format(fps, last_action, reward))
+        obs = episode.last_raw_obs_for()
+        print("\tfps: {:>6.2f}, state: {}, action: {}, reward: {:>3}".format(fps, obs, last_action, reward))
         episode.user_data["fps"].append(fps)
         self.batch_fps.append(fps)
 
