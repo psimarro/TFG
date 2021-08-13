@@ -174,7 +174,7 @@ class Kvazaar (gym.Env):
             if(output == "END"):
                 self.reset_kvazaar()
                 output = self.call_kvazaar(action)
-                #self.info["kvazaar"] = "END"
+                self.info["kvazaar"] = "END"
                 #self.done = True
 
             ##update metrics

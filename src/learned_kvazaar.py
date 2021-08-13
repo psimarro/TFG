@@ -13,6 +13,7 @@ import gym
 
 from kvazaar_gym.envs.kvazaar_env import Kvazaar
 from custom_callbacks import MyCallBacks
+import train_kvazaar
 
 nCores = multiprocessing.cpu_count()
 
@@ -37,31 +38,6 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-def calcula_cores(core_ini, core_fin):
-    """Returns a list integers that matches the CPUS for Kvazaar"""
-    print(core_ini, core_fin)
-    return [x for x in range(core_ini,core_fin+1)] 
-
-def set_affinity(kvazaar_cores):
-    """
-    Method that sets the affinity of the main process according to the cpus set for Kvazaar.
-    """
-    pid = os.getpid()
-    print("Current pid: ", pid)
-    total_cores = [x for x in range (nCores)]
-    cores_main_proc = [x for x in total_cores if x not in kvazaar_cores]
-    p = subprocess.Popen(["taskset", "-cp", ",".join(map(str,cores_main_proc)), str(pid)])
-    p.wait()
-
-def create_map_rewards(rewards_path):
-    rewards = {}
-    rewards_file = open(rewards_path)
-    rewards_file = rewards_file.read().splitlines()
-    for line in rewards_file:
-        key, value = line.split(",")
-        rewards[int(key)]= int(value)
-    return rewards
-
 def checkconf(conf):
     """Checker for configuration file options"""
     
@@ -80,6 +56,20 @@ def checkconf(conf):
            cores[1] < nCores and  \
            cores[0] < cores[1] , "La configuración de cores de kvazaar no es correcta"
 
+def load_checkpoint(path):
+    #restore checkpoint
+    chkpnt_root = str(path)
+    if(chkpnt_root[len(chkpnt_root)-1] != '/'): chkpnt_root += "/"
+    chkpt_file = max(glob.iglob(chkpnt_root + "*/*[!.tune_metadata]", recursive=True) , key=os.path.getctime) ##retrieve last checkpoint path
+    print(('----------------------\n' +
+            ' ---------------------\n' +
+            'checkpoint loaded --   {:} \n'+
+            '----------------------\n' +
+            ' ---------------------\n').format(chkpt_file))                                                
+    
+    return chkpt_file
+    
+
 def main ():
     #get command line parameters
     args = parse_args()
@@ -93,10 +83,10 @@ def main ():
     kvazaar_path = conf['common']['kvazaar']
     vids_path_test = args.video
     conf_cores = list(conf['common']['cores'].split(","))
-    kvazaar_cores = calcula_cores(int(conf_cores[0]),int(conf_cores[1]))
+    kvazaar_cores = [x for x in range(int(conf_cores[0]), int(conf_cores[1])+1)] 
     
     ##Set affinity of main process using cores left by kvazaar
-    set_affinity(kvazaar_cores)
+    train_kvazaar.set_affinity(kvazaar_cores)
     
     # start Ray -- add `local_mode=True` here for debugging
     ray.init(ignore_reinit_error=True, local_mode=True)
@@ -110,8 +100,7 @@ def main ():
 
     
     #create map_rewards
-    rewards = create_map_rewards(conf['common']['rewards'])
-
+    rewards = train_kvazaar.create_map_rewards(conf['common']['rewards'])
 
     # register the custom environment
     select_env = "kvazaar-v0"
@@ -128,17 +117,18 @@ def main ():
     agent = ppo.PPOTrainer(config, env=select_env)
 
     #restore checkpoint
-    chkpnt_root = str(args.path)
-    if(chkpnt_root[len(chkpnt_root)-1] != '/'): chkpnt_root += "/"
-    chkpt_file = max(glob.iglob(chkpnt_root + "*/*[!.tune_metadata]", recursive=True) , key=os.path.getctime) ##retrieve last checkpoint path
-    print(chkpt_file)
-    print(('----------------------\n' +
-            ' ---------------------\n' +
-            'checkpoint loaded --   {:} \n'+
-            '----------------------\n' +
-            ' ---------------------\n').format(chkpt_file))                                                
+    chkpt_file = load_checkpoint(args.path)
+    # chkpnt_root = str(args.path)
+    # if(chkpnt_root[len(chkpnt_root)-1] != '/'): chkpnt_root += "/"
+    # chkpt_file = max(glob.iglob(chkpnt_root + "*/*[!.tune_metadata]", recursive=True) , key=os.path.getctime) ##retrieve last checkpoint path
+    # print(('----------------------\n' +
+    #         ' ---------------------\n' +
+    #         'checkpoint loaded --   {:} \n'+
+    #         '----------------------\n' +
+    #         ' ---------------------\n').format(chkpt_file))                                                
     
     agent.restore(chkpt_file)
+
     env = gym.make(select_env, kvazaar_path=kvazaar_path, 
                             vids_path=vids_path_test, 
                             cores=kvazaar_cores,

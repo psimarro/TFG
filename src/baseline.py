@@ -13,6 +13,7 @@ import gym
 
 from kvazaar_gym.envs.kvazaar_env import Kvazaar
 from custom_callbacks import MyCallBacks
+from train_kvazaar import set_affinity, calcula_cores, create_map_rewards
 
 nCores = multiprocessing.cpu_count()
 
@@ -38,31 +39,6 @@ def parse_args():
     
     args = parser.parse_args()
     return args
-
-def calcula_cores(core_ini, core_fin):
-    """Returns a list integers that matches the CPUS for Kvazaar"""
-    print(core_ini, core_fin)
-    return [x for x in range(core_ini,core_fin+1)] 
-
-def set_affinity(kvazaar_cores):
-    """
-    Method that sets the affinity of the main process according to the cpus set for Kvazaar.
-    """
-    pid = os.getpid()
-    print("Current pid: ", pid)
-    total_cores = [x for x in range (nCores)]
-    cores_main_proc = [x for x in total_cores if x not in kvazaar_cores]
-    p = subprocess.Popen(["taskset", "-cp", ",".join(map(str,cores_main_proc)), str(pid)])
-    p.wait()
-
-def create_map_rewards(rewards_path):
-    rewards = {}
-    rewards_file = open(rewards_path)
-    rewards_file = rewards_file.read().splitlines()
-    for line in rewards_file:
-        key, value = line.split(",")
-        rewards[int(key)]= int(value)
-    return rewards
 
 def checkconf(conf):
     """Checker for configuration file options"""
@@ -95,7 +71,7 @@ def main ():
     kvazaar_path = conf['common']['kvazaar']
     vids_path_test = args.video
     conf_cores = list(conf['common']['cores'].split(","))
-    kvazaar_cores = calcula_cores(int(conf_cores[0]),int(conf_cores[1]))
+    kvazaar_cores = [x for x in range(int(conf_cores[0]), int(conf_cores[1])+1)] 
     
     ##Set affinity of main process using cores left by kvazaar
     set_affinity(kvazaar_cores)
