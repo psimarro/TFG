@@ -233,9 +233,8 @@ class Kvazaar (gym.Env):
     
     
     def render(self, mode="human"):
-        if not self.info["kvazaar"] == 'END':
-            l = 'obs:{}  fps:{:>1}  reward:{:<10}'.format(self.state, self.info["fps"], self.reward)
-            print(l)
+        l = 'obs:{}  fps:{:>1}  reward:{:<10}'.format(self.state, self.info["fps"], self.reward)
+        print(l)
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
