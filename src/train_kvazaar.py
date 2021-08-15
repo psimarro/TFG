@@ -31,7 +31,7 @@ def parse_args():
     Method that manages command line arguments.
     """
     parser = argparse.ArgumentParser(description="Trainer for Kvazaar video encoder using RLLIB.",
-    argument_default=argparse.SUPPRESS, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     
     parser.add_argument("-r", "--restore", action='store_true',help="Restore an agent from last checkpoint. Train from there.")
     ##required
