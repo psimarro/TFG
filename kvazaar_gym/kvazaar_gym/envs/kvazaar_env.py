@@ -6,7 +6,7 @@ import bisect
 
 import gym
 from gym.utils import seeding
-from gym.spaces import Discrete
+from gym.spaces import Discrete, Tuple
 import numpy as np
 
 class Kvazaar (gym.Env):
@@ -80,7 +80,7 @@ class Kvazaar (gym.Env):
         self.vids_list = None #for random or rotating mode
         
         self.action_space = Discrete(len(self.cores))
-        self.observation_space = Discrete(9)
+        self.observation_space = Tuple((Discrete(9), Discrete(len(self.cores))))
         self.kvazaar = None ##object for kvazaar subprocess
         
         self.vid_selected = {'name': None, 'pos': 0}
@@ -182,7 +182,7 @@ class Kvazaar (gym.Env):
             self.episode_steps += 1
             self.video_usage[self.vid_selected['name']] += 1
             
-            self.calculate_state(output=output)
+            self.calculate_state(output=output, action=action-1)
 
             #log this num step and the video used
             if self.logger: 
@@ -205,12 +205,13 @@ class Kvazaar (gym.Env):
         return [self.state, self.calculate_reward(), self.done, self.info]
     
     def calculate_reward(self):
-        self.reward = self.rewards_map.get(self.state)
+        core_error = [-x for x in self.cores]
+        self.reward = self.rewards_map.get(self.state[0]) + core_error[self.state[1]]
         self.info["reward"] = self.reward
 
         return self.reward
 
-    def calculate_state(self, output):
+    def calculate_state(self, output, action):
         ##Erase "FPS:" from output and save it in the new state.
         if (output == "END"):
             self.state = self.state
@@ -219,7 +220,7 @@ class Kvazaar (gym.Env):
             self.info["fps"] = '{:.2f}'.format(output_value)
             intervals = [10,16,20,24,27,30,35,40]
             states = [np.int(x) for x in range(9)]
-            self.state = states[bisect.bisect(intervals, output_value)]
+            self.state = (states[bisect.bisect(intervals, output_value)], action)
 
             # if output_value < 10: self.state = np.int64(0)
             # elif output_value < 16: self.state = np.int(1)
