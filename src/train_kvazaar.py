@@ -161,7 +161,7 @@ def main():
     
 
     # start Ray -- add `local_mode=True` here for debugging
-    ray.init(ignore_reinit_error=True)
+    ray.init(ignore_reinit_error=True, local_mode=True)
 
     
     # register the custom environment
