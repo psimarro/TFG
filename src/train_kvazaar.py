@@ -186,8 +186,7 @@ def main():
     # configure the environment and create agent
     config = ppo.DEFAULT_CONFIG.copy()
     config["log_level"] = "WARN"    
-    config["num_workers"] = 0
-    config["num_cpus_for_driver"] = nCores - len(kvazaar_cores)
+    config["num_workers"] = 1
     config["train_batch_size"] = batch
     config["rollout_fragment_length"] = batch
     config["sgd_minibatch_size"] = mini_batch
