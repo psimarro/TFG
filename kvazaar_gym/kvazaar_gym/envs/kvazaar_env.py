@@ -92,7 +92,7 @@ class Kvazaar (gym.Env):
 
         self.seed() #Generate seed for random numbers
         self.state = None
-        self.reset()
+        #self.reset()
         
 
     def reset(self):
