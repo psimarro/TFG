@@ -9,11 +9,13 @@ import datetime
 import logging
 import logging.handlers
 import tempfile
+from threading import local
 from time import CLOCK_REALTIME
 from configparser import ConfigParser
 
 import gym
 import ray
+from ray.exceptions import RayError
 import ray.rllib.agents.ppo as ppo
 from ray.tune.registry import register_env
 import ray.tune.logger as ray_logger
@@ -226,9 +228,12 @@ def main():
                     result["episode_len_mean"],
                     chkpt_file
                     ))
+        except RayError:
+            agent.stop()
+            print("Training stopped.") 
+            exit()
         except KeyboardInterrupt:
             agent.stop()
-        except StopIteration:
             print("Training stopped.") 
             exit()
     
