@@ -205,8 +205,7 @@ class Kvazaar (gym.Env):
         return [self.state, self.calculate_reward(), self.done, self.info]
     
     def calculate_reward(self):
-        core_error = [-x for x in self.cores]
-        self.reward = self.rewards_map.get(self.state[0]) + core_error[self.state[1]]
+        self.reward = self.rewards_map.get(self.state[0]) + (self.cores[self.state[1]] + 1)*(-0.5)
         self.info["reward"] = self.reward
 
         return self.reward
