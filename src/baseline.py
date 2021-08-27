@@ -13,7 +13,7 @@ import gym
 
 from kvazaar_gym.envs.kvazaar_env import Kvazaar
 from custom_callbacks import MyCallBacks
-from train_kvazaar import set_affinity, calcula_cores, create_map_rewards
+from train_kvazaar import set_affinity, create_map_rewards
 
 nCores = multiprocessing.cpu_count()
 

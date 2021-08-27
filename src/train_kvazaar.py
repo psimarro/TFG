@@ -21,7 +21,6 @@ from ray.tune.registry import register_env
 import ray.tune.logger as ray_logger
 
 from kvazaar_gym.envs.kvazaar_env import Kvazaar
-from tensorflow import _running_from_pip_package
 from custom_callbacks import MyCallBacks
 import learned_kvazaar
 
