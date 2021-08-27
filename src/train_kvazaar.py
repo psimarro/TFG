@@ -1,20 +1,16 @@
-import glob
 import os
-import multiprocessing
-import getpass
-import sys
-import subprocess
+from glob import glob
+from multiprocessing import cpu_count
+from subprocess import Popen
 import argparse
 import datetime
 import logging
 import logging.handlers
 import tempfile
-from threading import local
 from time import CLOCK_REALTIME
 from configparser import ConfigParser
 
-import gym
-import ray
+from ray import init as ray_init
 from ray.exceptions import RayError
 import ray.rllib.agents.ppo as ppo
 from ray.tune.registry import register_env
@@ -22,10 +18,9 @@ import ray.tune.logger as ray_logger
 
 from kvazaar_gym.envs.kvazaar_env import Kvazaar
 from custom_callbacks import MyCallBacks
-import learned_kvazaar
+import common_tasks
 
-
-nCores = multiprocessing.cpu_count()
+nCores = cpu_count()
 
 def parse_args():
     """
@@ -51,17 +46,6 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-def set_affinity(kvazaar_cores):
-    """
-    Method that sets the affinity of the main process according to the cpus set for Kvazaar.
-    """
-    pid = os.getpid()
-    print("Current pid: ", pid)
-    total_cores = [x for x in range (nCores)]
-    cores_main_proc = [x for x in total_cores if x not in kvazaar_cores]
-    p = subprocess.Popen(["taskset", "-cp", ",".join(map(str,cores_main_proc)), str(pid)])
-    p.wait()
-
 def get_video_logger(video_log_file):
     """
     Method that returns a logger for the videos used.
@@ -73,16 +57,6 @@ def get_video_logger(video_log_file):
     file_handler.setFormatter(logging.Formatter("%(asctime)s - %(message)s"))
     logger.addHandler(file_handler)
     return logger
-
-def create_map_rewards(rewards_path):
-    rewards = {}
-    rewards_file = open(rewards_path)
-    rewards_file = rewards_file.read().splitlines()
-    for line in rewards_file:
-        key, value = line.split(",")
-        rewards[int(key)]= int(value)
-
-    return rewards
 
 def checkconf(conf):
     """Checker for configuration file options."""
@@ -145,7 +119,7 @@ def main():
     video_logger = get_video_logger(results_path + 'video_' + training_name + "_" + fecha + '.log')
 
     #create map_rewards
-    rewards = create_map_rewards(conf['common']['rewards'])
+    rewards = common_tasks.create_map_rewards(conf['common']['rewards'])
 
     ##kvazaar options
     kvazaar_path = conf['common']['kvazaar']
@@ -155,14 +129,14 @@ def main():
     kvazaar_mode = conf['train']['mode']
 
     ##Set affinity of main process using cores left by kvazaar
-    set_affinity(kvazaar_cores)
+    common_tasks.set_affinity(kvazaar_cores)
 
     # init directory in which to save checkpoints
     chkpt_root = results_path + "checkpoints/"
     
 
     # start Ray -- add `local_mode=True` here for debugging
-    ray.init(ignore_reinit_error=True, local_mode=True)
+    ray_init(ignore_reinit_error=True, local_mode=True)
 
     
     # register the custom environment
@@ -199,7 +173,7 @@ def main():
         logdir = None
         if restore:
             #get directory of ray_results 
-            logdir = glob.glob(results_path + name + '*')[0]
+            logdir = glob(results_path + name + '*')[0]
         else:
             logdir = tempfile.mkdtemp(prefix=name+"_"+fecha+"_", dir=results_path)
         
@@ -211,7 +185,7 @@ def main():
     status = "\033[1;32;40m{:2d} reward {:6.2f}/{:6.2f}/{:6.2f} len {:4.2f} saved {}\033[0m"
     
     if args.restore:
-        agent.restore(learned_kvazaar.load_checkpoint(chkpt_root))
+        agent.restore(common_tasks.load_checkpoint(chkpt_root))
     
     # train a policy with RLlib using PPO
     for n in range(n_iters):

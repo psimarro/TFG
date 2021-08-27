@@ -1,8 +1,7 @@
-import subprocess
+from subprocess import Popen, PIPE, DEVNULL
 import time
 import os
-import multiprocessing
-import bisect
+from bisect import bisect
 
 import gym
 from gym.utils import seeding
@@ -139,10 +138,10 @@ class Kvazaar (gym.Env):
         command = ["taskset","-c",",".join([str(x) for x in self.cores])] + command
         
         # kvazaar process generation
-        self.kvazaar = subprocess.Popen(command, 
-                                        stdin=subprocess.PIPE, 
-                                        stdout=subprocess.PIPE, 
-                                        stderr=2 if self.kvazaar_output else subprocess.DEVNULL,
+        self.kvazaar = Popen(command, 
+                                        stdin=PIPE, 
+                                        stdout=PIPE, 
+                                        stderr=2 if self.kvazaar_output else DEVNULL,
                                         universal_newlines=True, bufsize=1, 
                                         env={'NUM_FRAMES_PER_BATCH': '24'})
                                         
@@ -219,7 +218,7 @@ class Kvazaar (gym.Env):
             self.info["fps"] = '{:.2f}'.format(output_value)
             intervals = [10,16,20,24,27,30,35,40]
             states = [np.int(x) for x in range(9)]
-            self.state = states[bisect.bisect(intervals, output_value)]
+            self.state = states[bisect(intervals, output_value)]
 
             # if output_value < 10: self.state = np.int64(0)
             # elif output_value < 16: self.state = np.int(1)

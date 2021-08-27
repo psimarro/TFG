@@ -1,27 +1,23 @@
 import os
-import multiprocessing
-import glob
-import getpass
-import subprocess
+from multiprocessing import cpu_count
 import argparse
 from configparser import ConfigParser
 
-import ray
+from ray import init as ray_init
 import ray.rllib.agents.ppo as ppo
 from ray.tune.registry import register_env
 import gym
 
 from kvazaar_gym.envs.kvazaar_env import Kvazaar
 from custom_callbacks import MyCallBacks
-from train_kvazaar import set_affinity, create_map_rewards
+import common_tasks
 
-nCores = multiprocessing.cpu_count()
+nCores = cpu_count()
 
 def parse_args():
     """
     Method that manages command line arguments.
     """
-    user = getpass.getuser()
     parser = argparse.ArgumentParser(description="Ray agent launcher that restores a checkpoint training of Kvazaar gym model.",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                      argument_default=argparse.SUPPRESS)
@@ -74,10 +70,10 @@ def main ():
     kvazaar_cores = [x for x in range(int(conf_cores[0]), int(conf_cores[1])+1)] 
     
     ##Set affinity of main process using cores left by kvazaar
-    set_affinity(kvazaar_cores)
+    common_tasks.set_affinity(kvazaar_cores)
     
     # start Ray -- add `local_mode=True` here for debugging
-    ray.init(ignore_reinit_error=True, local_mode=True)
+    ray_init(ignore_reinit_error=True, local_mode=True)
 
     #configure the environment and create agent
     config = ppo.DEFAULT_CONFIG.copy()
@@ -88,7 +84,7 @@ def main ():
 
     
     #create map_rewards
-    rewards = create_map_rewards(conf['common']['rewards'])
+    rewards = common_tasks.create_map_rewards(conf['common']['rewards'])
 
 
     # register the custom environment

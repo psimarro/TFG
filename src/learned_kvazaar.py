@@ -1,8 +1,5 @@
 import os
-import multiprocessing
-import glob
-import getpass
-import subprocess
+from multiprocessing import cpu_count
 import argparse
 from configparser import ConfigParser
 
@@ -13,15 +10,14 @@ import gym
 
 from kvazaar_gym.envs.kvazaar_env import Kvazaar
 from custom_callbacks import MyCallBacks
-import train_kvazaar
+import common_tasks
 
-nCores = multiprocessing.cpu_count()
+nCores = cpu_count()
 
 def parse_args():
     """
     Method that manages command line arguments.
     """
-    user = getpass.getuser()
     parser = argparse.ArgumentParser(description="Ray agent launcher that restores a checkpoint training of Kvazaar gym model.",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                      argument_default=argparse.SUPPRESS)
@@ -56,18 +52,7 @@ def checkconf(conf):
            cores[1] < nCores and  \
            cores[0] < cores[1] , "La configuración de cores de kvazaar no es correcta"
 
-def load_checkpoint(path):
-    #restore checkpoint
-    chkpnt_root = str(path)
-    if(chkpnt_root[len(chkpnt_root)-1] != '/'): chkpnt_root += "/"
-    chkpt_file = max(glob.iglob(chkpnt_root + "*/*[!.tune_metadata]", recursive=True) , key=os.path.getctime) ##retrieve last checkpoint path
-    print(('----------------------\n' +
-            ' ---------------------\n' +
-            'checkpoint loaded --   {:} \n'+
-            '----------------------\n' +
-            ' ---------------------\n').format(chkpt_file))                                                
-    
-    return chkpt_file
+                                    
     
 
 def main ():
@@ -86,7 +71,7 @@ def main ():
     kvazaar_cores = [x for x in range(int(conf_cores[0]), int(conf_cores[1])+1)] 
     
     ##Set affinity of main process using cores left by kvazaar
-    train_kvazaar.set_affinity(kvazaar_cores)
+    common_tasks.set_affinity(kvazaar_cores)
     
     # start Ray -- add `local_mode=True` here for debugging
     ray.init(ignore_reinit_error=True, local_mode=True)
@@ -100,7 +85,7 @@ def main ():
 
     
     #create map_rewards
-    rewards = train_kvazaar.create_map_rewards(conf['common']['rewards'])
+    rewards = common_tasks.create_map_rewards(conf['common']['rewards'])
 
     # register the custom environment
     select_env = "kvazaar-v0"
@@ -117,7 +102,7 @@ def main ():
     agent = ppo.PPOTrainer(config, env=select_env)
 
     #restore checkpoint
-    chkpt_file = load_checkpoint(args.path)
+    chkpt_file = common_tasks.load_checkpoint(args.path)
     # chkpnt_root = str(args.path)
     # if(chkpnt_root[len(chkpnt_root)-1] != '/'): chkpnt_root += "/"
     # chkpt_file = max(glob.iglob(chkpnt_root + "*/*[!.tune_metadata]", recursive=True) , key=os.path.getctime) ##retrieve last checkpoint path
