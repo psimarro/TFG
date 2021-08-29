@@ -24,7 +24,7 @@ def parse_args():
     #Required
     parser.add_argument("-v", "--video", help= "Path of the tested video.", required=True)
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("-a", "--action", type=int, help="Predifined action.")
+    group.add_argument("-c", "--cores", type=int, help="Predifined number of cores.")
     group.add_argument("-r", "--random", action='store_true', help= "Wheter to make an random baseline")
 
     #optional
@@ -113,12 +113,13 @@ def main ():
     cpus_used = [0] * len(kvazaar_cores)
     steps = 0
 
+    results = []
 
     done = False
     while not done:
         
-        if 'action' in vars(args):
-            action = args.action
+        if 'cores' in vars(args):
+            action = args.cores-1
         else:
             action = env.action_space.sample()
         #action = args.action if args.action else env.action_space.sample()
@@ -128,16 +129,28 @@ def main ():
         
         #done = info["kvazaar"] == "END"
 
+        print("action:", action+1, "core(s)")
+        env.render()
+        cpus_used[action] += 1
+        steps += 1
+
+        results.append([steps, info["fps"], reward, action+1])
+
         if done:
             # report at the end of each episode
             print('cumulative reward {} in {:} steps, cpus used {:}'.format(sum_reward, steps, cpus_used))
-        else: 
-            print("action:", action+1, "core(s)")
-            env.render()
-            cpus_used[action] += 1
-            steps += 1
-    
+        
+
     agent.stop()
+
+    video_name = os.path.splitext(os.path.basename(args.video))[0]
+    csv_filename = video_name
+    if 'cores' in vars(args):
+        csv_filename += "_" + str(args.cores) + "_cores"
+    else:
+        csv_filename += "_random"
+    
+    common_tasks.save_csv(results, name=csv_filename, baseline=True)
     
 if __name__ == "__main__":
     

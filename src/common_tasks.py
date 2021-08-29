@@ -2,6 +2,10 @@ import os
 from multiprocessing import cpu_count
 from subprocess import Popen
 from glob import iglob
+import csv
+
+CSV_PATH = 'csv'
+CSV_PATH_BASELINES = 'csv/baselines'
 
 nCores = cpu_count()
 def set_affinity(kvazaar_cores):
@@ -35,4 +39,21 @@ def load_checkpoint(path):
             ' ---------------------\n' +
             'checkpoint loaded --   {:} \n'+
             '----------------------\n' +
-            ' ---------------------\n').format(chkpt_file))       
+            ' ---------------------\n').format(chkpt_file))
+
+    return chkpt_file     
+
+def save_csv(results, name, baseline=False):
+    if not baseline and not os.path.exists(CSV_PATH):
+        os.makedirs(CSV_PATH)
+
+    if baseline and not os.path.exists(CSV_PATH_BASELINES):
+        os.makedirs(CSV_PATH_BASELINES)
+
+    csv_path = "{}/{}.csv".format(CSV_PATH if not baseline else CSV_PATH_BASELINES, name)
+    fields = ["step", "fps", "reward", "action"]
+
+    with open(csv_path, 'w') as csv_file:
+        csvwriter = csv.writer(csv_file)
+        csvwriter.writerow(fields)
+        csvwriter.writerows(results)

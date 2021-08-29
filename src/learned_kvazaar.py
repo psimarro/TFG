@@ -127,6 +127,8 @@ def main ():
     cpus_used = [0] * len(kvazaar_cores)
     steps = 0
 
+    results = []
+
     done = False
     while not done:
 
@@ -135,19 +137,26 @@ def main ():
         state, reward, done, info = env.step(action)
         sum_reward += reward
         
+        
+        
         #done = info["kvazaar"] == "END"
 
+        print("action:", action+1, "core(s)")
+        env.render()
+        cpus_used[action] += 1
+        steps += 1
+        
+        results.append([steps, info["fps"], reward, action+1])
         if done:
             # report at the end of each episode
             print('cumulative reward {} in {:} steps, cpus used {:}'.format(sum_reward, steps, cpus_used))
-        else: 
-            print("action:", action+1, "core(s)")
-            env.render()
-            cpus_used[action] += 1
-            steps += 1
+            
     
     agent.stop()
-    
+    video_name = os.path.splitext(os.path.basename(args.video))[0]
+    csv_filename = os.path.basename(os.path.dirname(args.path)) + "_" + video_name
+    common_tasks.save_csv(results, name=csv_filename)
+
 if __name__ == "__main__":
     
     main()
