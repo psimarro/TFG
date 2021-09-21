@@ -1,4 +1,8 @@
 # TRABAJO DE FIN DE GRADO - APRENDIZAJE POR REFUERZO PARA LA MEJORA DE CALIDAD DE SERVICIO EN PROCESOS DE CODIFICACIÓN DE VÍDEO
+<p align="center">
+   <img src="3-2016-07-21-Marca UCM logo negro.png" width=175>
+   <img src="escudofdigrande.png" width=175>
+</p>
 
 ## Descripción
 Este repositorio engloba la implementación de un sistema de aprendizaje por refuerzo usando las librerías RLLIB y GYM para una tarea de codificación de vídeos usando Kvazaar, un codificador que implementa el estándar HVEC. Se ha diseñado un entorno para [una versión modificada de este programa](https://github.com/luismacostero/malleable_kvazaar) que permite seleccionar de manera dinánimca el numero de hilos que se ejecutan. El objetivo de este proyecto es generar un agente de aprendizaje por refuerzo capaz de aprender a utilizar este codificador de manera que el resultado de las codificaciones de vídeo se mantenga entre 20 y 30 FPS. 
@@ -82,7 +86,7 @@ Este script ejecuta un agente con acciones base para Kvazaar
 ```
 python3 src/baseline.py -v <video> [-r | -a <nº Cores>]
 ```
-La rutya vídeo sobre el que se realiza el baseline se indica con `-v <video>`.
+La ruta vídeo sobre el que se realiza el baseline se indica con `-v <video>`.
 Se debe elegir entre acciones aleatorias con `-r` o un número fijo de núcleos para Kvazaar con `-a <nº Cores>`.
 Se generan un archivo `.csv` con los resultados obtenidos que se guarda en `csv/`.
 
