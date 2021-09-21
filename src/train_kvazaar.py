@@ -1,13 +1,11 @@
 import os
 from glob import glob
 from multiprocessing import cpu_count
-from subprocess import Popen
 import argparse
 import datetime
 import logging
 import logging.handlers
 import tempfile
-from time import CLOCK_REALTIME
 from configparser import ConfigParser
 
 from ray import init as ray_init
@@ -30,18 +28,6 @@ def parse_args():
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     
     parser.add_argument("-r", "--restore", action='store_true',help="Restore an agent from last checkpoint. Train from there.")
-    ##required
-    # parser.add_argument("-n", "--name", required=True, help="Name of the trainiing. This will be the name of the path for saving checkpoints.")
-    # parser.add_argument("-i", "--iters", type=int, help="Number of training iterations", required=True)
-    # parser.add_argument("-m", "--mode", help="Mode of video selection", choices=["random","rotating"], required=True)
-    # parser.add_argument("-r", "--rewards", required=True, help="Path of rewards file")
-
-    # #optional
-    # parser.add_argument("-b", "--batch", type=int, help="Training batch size", default=200)
-    # parser.add_argument("--mini_batch", type=int, help="Size of SGD minibatch", default=128)
-    # parser.add_argument("-k", "--kvazaar", help="Kvazaar's executable file location", default= os.path.expanduser("~/malleable_kvazaar/bin/./kvazaar"))
-    # parser.add_argument("-v", "--videos", help= "Path of the set of videos for training", default= os.path.expanduser("~/videos_kvazaar_train/"))
-    # parser.add_argument("-c", "--cores", nargs=2, metavar=('start', 'end'), type=int, help= "Kvazaar's dedicated CPUS (range)", default=[0, int(nCores/2)-1])
     
     args = parser.parse_args()
     return args
@@ -96,9 +82,9 @@ def main():
 
     # get configuration
     conf = ConfigParser()
-    print(os.getcwd())
     conf.read('src/config.ini')
-        
+    
+
     fecha = datetime.datetime.now().strftime("%d_%m_%Y__%H_%M_%S")
 
     #init path for results if not existing
@@ -161,7 +147,7 @@ def main():
     # configure the environment and create agent
     config = ppo.DEFAULT_CONFIG.copy()
     config["log_level"] = "WARN"    
-    config["num_workers"] = 1
+    config["num_workers"] = 0
     config["train_batch_size"] = batch
     config["rollout_fragment_length"] = batch
     config["sgd_minibatch_size"] = mini_batch

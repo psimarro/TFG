@@ -4,3 +4,4 @@ gym
 ray==0.8.6
 ray[rllib]
 pandas
+testresources
