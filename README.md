@@ -84,10 +84,10 @@ Se generan un archivo `.csv` con los resultados obtenidos que se guarda en `csv/
 ### Script de datos base
 Este script ejecuta un agente con acciones base para Kvazaar
 ```
-python3 src/baseline.py -v <video> [-r | -a <nº Cores>]
+python3 src/baseline.py -v <video> [-r | -c <nº Cores>]
 ```
 La ruta vídeo sobre el que se realiza el baseline se indica con `-v <video>`.
-Se debe elegir entre acciones aleatorias con `-r` o un número fijo de núcleos para Kvazaar con `-a <nº Cores>`.
+Se debe elegir entre acciones aleatorias con `-r` o un número fijo de núcleos para Kvazaar con `-c <nº Cores>`.
 Se generan un archivo `.csv` con los resultados obtenidos que se guarda en `csv/`.
 
 
