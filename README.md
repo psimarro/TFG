@@ -34,9 +34,9 @@ git clone https://github.com/psimarro/TFG.git
 ```
 Creamos un entorno virtual e instalamos dependencias
 ```
-cd TFG
+cd TFG/
 python3 -m venv --system-site-packages ./venv
-source venv/bin/activate/
+source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
@@ -65,7 +65,7 @@ Este archivo necesita ser modificado antes de utilizar los scripts del proyecto.
 * `mode` : selección de vídeos. Puede ser `random` o `rotating`
 * `iters` : número de iteraciones del entrenamiento (batch x iters pasos en total) 
 * `name` : nombre de la ruta de de los resultados. Se generará una ruta desde `resultados`
-* 
+
 ### Script de entrenamiento
 Ejecuta un entrenamiento y guarda sus resultados en `resultados/<name de archivo config>`.
 ```
